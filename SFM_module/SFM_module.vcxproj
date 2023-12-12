@@ -1,0 +1,283 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{FC06F5F6-683B-4EE1-85F5-A9999626B276}</ProjectGuid>
+    <Keyword>QtVS_v304</Keyword>
+    <WindowsTargetPlatformVersion Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">10.0.22621.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">10.0.22621.0</WindowsTargetPlatformVersion>
+    <QtMsBuild Condition="'$(QtMsBuild)'=='' OR !Exists('$(QtMsBuild)\qt.targets')">$(MSBuildProjectDirectory)\QtMsBuild</QtMsBuild>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Condition="Exists('$(QtMsBuild)\qt_defaults.props')">
+    <Import Project="$(QtMsBuild)\qt_defaults.props" />
+  </ImportGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
+    <QtInstall>6.3.0_msvc2019_64</QtInstall>
+    <QtModules>core;gui;widgets;3dcore;3danimation;3dextras;3dinput;3dlogic;3drender;concurrent;opengl;openglwidgets;printsupport;charts;datavisualization</QtModules>
+    <QtBuildConfig>debug</QtBuildConfig>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
+    <QtInstall>6.3.0_msvc2019_64</QtInstall>
+    <QtModules>core;gui;widgets;3dcore;3danimation;3dextras;3dinput;3dlogic;3drender;concurrent;opengl;openglwidgets;printsupport;charts;datavisualization</QtModules>
+    <QtBuildConfig>release</QtBuildConfig>
+  </PropertyGroup>
+  <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
+    <Message Importance="High" Text="QtMsBuild: could not locate qt.targets, qt.props; project may not build correctly." />
+  </Target>
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <IncludePath>C:\Build\Lib\Opencv\include;C:\Build\Lib\Opencv\include\opencv2;C:\Build\Lib\ceres-solver-2.1.0\include;C:\Build\Lib\eigen-3.4.0\include\eigen3;C:\Build\Lib\eigen-3.4.0\include\eigen3\Eigen;C:\Build\Lib\glog-0.6.0\include;C:\Build\Lib\gflags-2.2.2\include;C:\Program Files\MATLAB\R2022b\extern\include;C:\Build\Lib\VTK-9.2.6\Release\include\vtk-9.2;C:\Build\PCL 1.13.1\include\pcl-1.13;C:\Build\PCL 1.13.1\3rdParty\Boost\include\boost-1_82;C:\Build\PCL 1.13.1\3rdParty\FLANN\include;C:\Build\PCL 1.13.1\3rdParty\Qhull\include;C:\Program Files\OpenNI2\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Build\Lib\Opencv\x64\vc17\lib;C:\Build\Lib\ceres-solver-2.1.0\lib;C:\Build\Lib\gflags-2.2.2\lib;C:\Build\Lib\glog-0.6.0\lib;C:\Program Files\MATLAB\R2022b\extern\lib\win64\microsoft;C:\Build\Lib\VTK-9.2.6\Release\lib;C:\Build\PCL 1.13.1\lib;C:\Build\PCL 1.13.1\3rdParty\Boost\lib;C:\Build\PCL 1.13.1\3rdParty\FLANN\lib;C:\Build\PCL 1.13.1\3rdParty\Qhull\lib;C:\Program Files\OpenNI2\Lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <IncludePath>C:\Build\Lib\Opencv\include;C:\Build\Lib\Opencv\include\opencv2;C:\Build\Lib\ceres-solver-2.1.0\include;C:\Build\Lib\eigen-3.4.0\include\eigen3;C:\Build\Lib\eigen-3.4.0\include\eigen3\Eigen;C:\Build\Lib\glog-0.6.0\include;C:\Build\Lib\gflags-2.2.2\include;C:\Program Files\MATLAB\R2022b\extern\include;C:\Build\Lib\VTK-9.2.6\Release\include\vtk-9.2;C:\Build\PCL 1.13.1\include\pcl-1.13;C:\Build\PCL 1.13.1\3rdParty\Boost\include\boost-1_82;C:\Build\PCL 1.13.1\3rdParty\FLANN\include;C:\Build\PCL 1.13.1\3rdParty\Qhull\include;C:\Program Files\OpenNI2\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Build\Lib\Opencv\x64\vc17\lib;C:\Build\Lib\ceres-solver-2.1.0\lib;C:\Build\Lib\gflags-2.2.2\lib;C:\Build\Lib\glog-0.6.0\lib;C:\Program Files\MATLAB\R2022b\extern\lib\win64\microsoft;C:\Build\Lib\VTK-9.2.6\Release\lib;C:\Build\PCL 1.13.1\lib;C:\Build\PCL 1.13.1\3rdParty\Boost\lib;C:\Build\PCL 1.13.1\3rdParty\FLANN\lib;C:\Build\PCL 1.13.1\3rdParty\Qhull\lib;C:\Program Files\OpenNI2\Lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Link>
+      <AdditionalDependencies>C:\Project_VS\PET_module\SFM_module\SFM_module\Feature_Detect\Lib\*.lib;C:\Program Files\OpenNI2\Lib\*.lib;C:\Build\PCL 1.13.1\3rdParty\Qhull\lib\*.lib;C:\Build\PCL 1.13.1\3rdParty\FLANN\lib\*.lib;C:\Build\PCL 1.13.1\3rdParty\Boost\lib\*.lib;C:\Build\PCL 1.13.1\lib\Debug\*.lib;C:\Build\Lib\VTK-9.2.6\Debug\lib\*.lib;libmx.lib;libmat.lib;glogd.lib;gflags_nothreads_debug.lib;gflags_debug.lib;ceres-debug.lib;opencv_world480d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ClCompile>
+      <PreprocessorDefinitions>GLOG_NO_ABBREVIATED_SEVERITIES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Link>
+      <AdditionalDependencies>C:\Project_VS\PET_module\SFM_module\SFM_module\Feature_Detect\Lib\*.lib;C:\Program Files\OpenNI2\Lib\*.lib;C:\Build\PCL 1.13.1\3rdParty\Qhull\lib\*.lib;C:\Build\PCL 1.13.1\3rdParty\FLANN\lib\*.lib;C:\Build\PCL 1.13.1\3rdParty\Boost\lib\*.lib;C:\Build\PCL 1.13.1\lib\Release\*.lib;C:\Build\Lib\VTK-9.2.6\Release\lib\*.lib;libmx.lib;libmat.lib;glog.lib;gflags_nothreads.lib;gflags.lib;ceres.lib;opencv_world480.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ClCompile>
+      <PreprocessorDefinitions>GLOG_NO_ABBREVIATED_SEVERITIES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
+    <ClCompile>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="Configuration">
+    <ClCompile>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <Optimization>MaxSpeed</Optimization>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Calibration_Log_module.cpp" />
+    <ClCompile Include="Camera_op\camshowlabel.cpp" />
+    <ClCompile Include="Feature_Detect\imagedetectmethod.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\algbwmorph.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\binaryMinOrMax.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\bsxfun.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\Checkerboard.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\circularBoundary.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\colon.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\combineVectorElements.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\detectCheckerboard.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\div.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\edge.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\eml_setop.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\find.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\find_peaks.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\flip.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\fspecial.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\get_chessborad_pixel.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\get_chessborad_pixel_data.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\get_chessborad_pixel_initialize.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\get_chessborad_pixel_rtwutil.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\get_chessborad_pixel_terminate.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\halideEvalImpl.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\imdilate.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\imedge_2d.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\imerode.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\imfilter.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\isequal.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\ismember.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\mean.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\minOrMax.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\norm.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\polyfit.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\polyval.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\qrsolve.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\rot90.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\rtGetInf.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\rtGetNaN.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\rt_nonfinite.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\secondDerivCornerMetric.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\sort.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\sortIdx.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\squeeze.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\subPixelLocation.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\sum.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\svd.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\svd1.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\unsafeSxfun.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\xaxpy.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\xdotc.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\xgeqp3.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\xnrm2.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\xrot.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\xrotg.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\xswap.cpp" />
+    <ClCompile Include="Language\Linguist.cpp" />
+    <ClCompile Include="PCL_setting_module.cpp" />
+    <ClCompile Include="plot_show\qcustomplot.cpp" />
+    <ClCompile Include="SFM_optimize.cpp" />
+    <ClCompile Include="SFM_setting_module.cpp" />
+    <ClCompile Include="VTK_plot\VTK_plot.cpp" />
+    <QtRcc Include="SFM_module.qrc" />
+    <QtUic Include="Calibration_Log_module.ui" />
+    <QtUic Include="PCL_setting_module.ui" />
+    <QtUic Include="SFM_module.ui" />
+    <QtMoc Include="SFM_module.h" />
+    <ClCompile Include="SFM_module.cpp" />
+    <ClCompile Include="main.cpp" />
+    <QtUic Include="SFM_setting_module.ui" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="Calibration_Log_module.h" />
+    <ClInclude Include="Feature_Detect\CMMHelp.h" />
+    <ClInclude Include="Feature_Detect\CodeID.h" />
+    <QtMoc Include="Feature_Detect\imagedetectmethod.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\algbwmorph.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\binaryMinOrMax.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\bsxfun.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\Checkerboard.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\circularBoundary.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\coder_array.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\coder_bounded_array.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\colon.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\combineVectorElements.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\detectCheckerboard.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\div.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\edge.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\eml_setop.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\find.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\find_peaks.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\flip.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\fspecial.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\get_chessborad_pixel.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\get_chessborad_pixel_data.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\get_chessborad_pixel_initialize.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\get_chessborad_pixel_rtwutil.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\get_chessborad_pixel_terminate.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\get_chessborad_pixel_types.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\halideEvalImpl.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\HalideRuntime.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\imdilate.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\imedge_2d.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\imerode.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\imfilter.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\isequal.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\ismember.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwbwlookup_tbb.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwcannythresholding_tbb.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwedgesobelprewitt_tbb.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwedgethinning_tbb.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwgetnumcores.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwimfilter.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwimregionalmax.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwippfilter.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwippreconstruct.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwmorphop_ipp.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwtbbhist.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\mean.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\minOrMax.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\morphop2_halide_imdilate_float32_host.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\morphop2_halide_imerode_float32_host.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\norm.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\polyfit.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\polyval.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\qrsolve.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\rot90.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\rtGetInf.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\rtGetNaN.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\rtwtypes.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\rt_defines.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\rt_nonfinite.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\secondDerivCornerMetric.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\serializeDeserializeHalideBuffer.hpp" />
+    <ClInclude Include="Feature_Detect\Matlab2C\sort.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\sortIdx.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\squeeze.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\subPixelLocation.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\sum.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\svd.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\svd1.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\tmwtypes.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\unsafeSxfun.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\xaxpy.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\xdotc.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\xgeqp3.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\xnrm2.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\xrot.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\xrotg.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\xswap.h" />
+    <ClInclude Include="Format_Document.h" />
+    <QtMoc Include="PCL_setting_module.h" />
+    <ClInclude Include="VTK_plot\VTK_plot.h" />
+    <QtMoc Include="Camera_op\camshowlabel.h" />
+    <QtMoc Include="plot_show\qcustomplot.h" />
+    <QtMoc Include="Language\Linguist.h" />
+    <ClInclude Include="SFM_optimize.h" />
+    <QtMoc Include="SFM_setting_module.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Feature_Detect\Matlab2C\buildInfo.mat" />
+    <None Include="Feature_Detect\Matlab2C\rtw_proj.tmw" />
+    <None Include="Feature_Detect\Matlab2C\_clang-format" />
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="Feature_Detect\Matlab2C\morphop2_halide_imdilate_float32_host.obj" />
+    <Object Include="Feature_Detect\Matlab2C\morphop2_halide_imerode_float32_host.obj" />
+    <Object Include="Feature_Detect\Matlab2C\_halideRuntime.obj" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
+    <Import Project="$(QtMsBuild)\qt.targets" />
+  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

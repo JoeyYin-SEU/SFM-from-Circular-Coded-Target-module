@@ -1,0 +1,543 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>qml;cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>qrc;rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Form Files">
+      <UniqueIdentifier>{99349809-55BA-4b9d-BF79-8FDBB0286EB3}</UniqueIdentifier>
+      <Extensions>ui</Extensions>
+    </Filter>
+    <Filter Include="Translation Files">
+      <UniqueIdentifier>{639EADAA-A684-42e4-A9AD-28FC9BCB8F7C}</UniqueIdentifier>
+      <Extensions>ts</Extensions>
+    </Filter>
+    <Filter Include="Camera_op">
+      <UniqueIdentifier>{b9ca9dad-044c-4def-babe-e2e050a886d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="plot_show">
+      <UniqueIdentifier>{f2f80ee9-ade9-412c-af5c-efea00616206}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Language">
+      <UniqueIdentifier>{bd9956a6-7cc9-4328-9165-b40068c6d170}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="VTK_plot">
+      <UniqueIdentifier>{d4747ce7-4e0b-44ff-aa6b-9199f1e1f6a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Feature_detect">
+      <UniqueIdentifier>{c5806522-fd03-45ca-b610-172b978b30b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Feature_detect\Matlab2C">
+      <UniqueIdentifier>{593c1e29-3ddc-4a96-b1eb-3761ae1a9252}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <QtRcc Include="SFM_module.qrc">
+      <Filter>Resource Files</Filter>
+    </QtRcc>
+    <QtUic Include="SFM_module.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtMoc Include="SFM_module.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <ClCompile Include="SFM_module.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SFM_optimize.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SFM_setting_module.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera_op\camshowlabel.cpp">
+      <Filter>Camera_op</Filter>
+    </ClCompile>
+    <ClCompile Include="plot_show\qcustomplot.cpp">
+      <Filter>plot_show</Filter>
+    </ClCompile>
+    <ClCompile Include="Language\Linguist.cpp">
+      <Filter>Language</Filter>
+    </ClCompile>
+    <ClCompile Include="VTK_plot\VTK_plot.cpp">
+      <Filter>VTK_plot</Filter>
+    </ClCompile>
+    <ClCompile Include="Calibration_Log_module.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\imagedetectmethod.cpp">
+      <Filter>Feature_detect</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\algbwmorph.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\binaryMinOrMax.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\bsxfun.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\Checkerboard.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\circularBoundary.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\colon.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\combineVectorElements.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\detectCheckerboard.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\div.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\edge.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\eml_setop.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\find.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\find_peaks.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\flip.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\fspecial.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\get_chessborad_pixel.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\get_chessborad_pixel_data.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\get_chessborad_pixel_initialize.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\get_chessborad_pixel_rtwutil.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\get_chessborad_pixel_terminate.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\halideEvalImpl.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\imdilate.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\imedge_2d.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\imerode.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\imfilter.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\isequal.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\ismember.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\mean.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\minOrMax.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\norm.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\polyfit.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\polyval.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\qrsolve.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\rot90.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\rt_nonfinite.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\rtGetInf.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\rtGetNaN.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\secondDerivCornerMetric.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\sort.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\sortIdx.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\squeeze.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\subPixelLocation.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\sum.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\svd.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\svd1.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\unsafeSxfun.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\xaxpy.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\xdotc.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\xgeqp3.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\xnrm2.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\xrot.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\xrotg.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\xswap.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="PCL_setting_module.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="SFM_setting_module.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="Camera_op\camshowlabel.h">
+      <Filter>Camera_op</Filter>
+    </QtMoc>
+    <QtMoc Include="plot_show\qcustomplot.h">
+      <Filter>plot_show</Filter>
+    </QtMoc>
+    <QtMoc Include="Language\Linguist.h">
+      <Filter>Language</Filter>
+    </QtMoc>
+    <QtMoc Include="Calibration_Log_module.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="Feature_Detect\imagedetectmethod.h">
+      <Filter>Feature_detect</Filter>
+    </QtMoc>
+    <QtMoc Include="PCL_setting_module.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SFM_optimize.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VTK_plot\VTK_plot.h">
+      <Filter>VTK_plot</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\CMMHelp.h">
+      <Filter>Feature_detect</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\CodeID.h">
+      <Filter>Feature_detect</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\algbwmorph.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\binaryMinOrMax.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\bsxfun.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\Checkerboard.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\circularBoundary.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\coder_array.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\coder_bounded_array.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\colon.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\combineVectorElements.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\detectCheckerboard.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\div.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\edge.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\eml_setop.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\find.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\find_peaks.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\flip.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\fspecial.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\get_chessborad_pixel.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\get_chessborad_pixel_data.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\get_chessborad_pixel_initialize.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\get_chessborad_pixel_rtwutil.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\get_chessborad_pixel_terminate.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\get_chessborad_pixel_types.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\halideEvalImpl.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\HalideRuntime.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\imdilate.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\imedge_2d.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\imerode.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\imfilter.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\isequal.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\ismember.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwbwlookup_tbb.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwcannythresholding_tbb.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwedgesobelprewitt_tbb.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwedgethinning_tbb.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwgetnumcores.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwimfilter.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwimregionalmax.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwippfilter.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwippreconstruct.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwmorphop_ipp.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\libmwtbbhist.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\mean.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\minOrMax.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\morphop2_halide_imdilate_float32_host.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\morphop2_halide_imerode_float32_host.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\norm.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\polyfit.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\polyval.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\qrsolve.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\rot90.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\rt_defines.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\rt_nonfinite.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\rtGetInf.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\rtGetNaN.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\rtwtypes.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\secondDerivCornerMetric.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\serializeDeserializeHalideBuffer.hpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\sort.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\sortIdx.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\squeeze.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\subPixelLocation.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\sum.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\svd.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\svd1.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\tmwtypes.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\unsafeSxfun.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\xaxpy.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\xdotc.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\xgeqp3.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\xnrm2.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\xrot.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\xrotg.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\xswap.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Format_Document.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <QtUic Include="SFM_setting_module.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="Calibration_Log_module.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="PCL_setting_module.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Feature_Detect\Matlab2C\_clang-format">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </None>
+    <None Include="Feature_Detect\Matlab2C\buildInfo.mat">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </None>
+    <None Include="Feature_Detect\Matlab2C\rtw_proj.tmw">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="Feature_Detect\Matlab2C\_halideRuntime.obj">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </Object>
+    <Object Include="Feature_Detect\Matlab2C\morphop2_halide_imdilate_float32_host.obj">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </Object>
+    <Object Include="Feature_Detect\Matlab2C\morphop2_halide_imerode_float32_host.obj">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </Object>
+  </ItemGroup>
+</Project>
