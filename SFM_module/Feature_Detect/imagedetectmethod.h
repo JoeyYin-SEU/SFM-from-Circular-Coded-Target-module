@@ -1,6 +1,10 @@
 ﻿#ifndef IMAGEDETECTMETHOD_H
 #define IMAGEDETECTMETHOD_H
 
+
+/********************
+Originally written by Professor Dong Shuai, with extensive detailed modifications by Yin Zhuoyi.
+*******************/
 #include <QObject>
 #include "CMMHelp.h"
 #include "CodeID.h"
@@ -63,35 +67,6 @@ public:
 	ImageDetectMethod(QObject* parent);
 	~ImageDetectMethod();
 
-	//*********************编码点和非编码点检测********************************************
-	//image_file_name - 输入图像路径名
-	//ratio_k - 输入灰度准则的比例，非编码点外径与内径之比
-	//ratio_k1 - 输入编码环内径与中间定位圆的内径之比
-	//ratio_k2 - 输入编码环外径与中间定位圆的内径之比
-	//min_radius - 圆最小半径
-	//max_radius - 圆最大半径
-	//color_type - 标志点白底黑点还是黑底白点
-	//code_bites_type - 编码点编码位数， 一般默认常用 15_8 15段编码8个1
-	//code_point_mat - 输出编码点信息矩阵  n*7 , id,x,y,quality, r_a,r_b,angle_in_pi
-	//uncode_point_mat - 输出编码点信息矩阵 n*7 , id,x,y,quality, r_a,r_b,angle_in_pi
-	static bool CodeAndUncodePointDetect(QString image_file_name, cv::Mat& code_point_mat, cv::Mat& uncode_point_mat,
-		float ratio_k, float ratio_k1, float ratio_k2,
-		float min_radius, float max_radius, float ellipse_error_pixel = 0.5,
-		MarkPointColorType color_type = BlackDownWhiteUp, CodePointBitesType code_bites_type = CodeBites15,
-		DetectContoursMethod image_process_method = OTSU_Method, SubPixelPosMethod subpixel_pos_method = Gray_Centroid);
-
-	//*******************圆心定位精度测试用**********************
-	static bool TestCircleCenterPosAccuracy(QString image_file_name, cv::Mat& code_point_mat, cv::Mat& uncode_point_mat,
-		float ratio_k, float ratio_k1, float ratio_k2,
-		float min_radius, float max_radius, float ellipse_error_pixel = 0.5,
-		MarkPointColorType color_type = BlackDownWhiteUp, CodePointBitesType code_bites_type = CodeBites15,
-		DetectContoursMethod image_process_method = OTSU_Method, SubPixelPosMethod subpixel_pos_method = Gray_Centroid);
-
-	//标定板角点检测
-	//corners-输出角点坐标，sign_list-输出点是否有效
-	//棋盘
-	static bool FindChessGridOpencv(QString image_file_name, int h_num, int v_num, std::vector<cv::Point2f>& corners, std::vector<uchar>& sign_list, int& useful_corner_num);
-
 	//CSI标定板
 	static bool FindCircleGrid(cv::Mat ori_image, int h_num, int v_num, int h_offset, int v_offset, int h_mid_length,
 		int v_mid_length, std::vector<cv::Point2f>& corners, std::vector<uchar>& sign_list, int& useful_corner_num,
@@ -100,14 +75,6 @@ public:
 		float min_radius = 5, float max_radius = 50, float ellipse_error_pixel = 0.5 , int min_arc = 240, int min_points = 6, int min_contour_num = 8,
 		DetectContoursMethod image_process_method = CANNY_Method, SubPixelPosMethod subpixel_pos_method = Gauss_Curve_Fit);
 
-
-	//编码点自标定，特征点检测
-	static bool FindCodePointsForSelfCalibrationByHartly(QStringList image_file_name_list, std::vector<std::vector<cv::Point2f>>& code_points_list,
-		float ratio_k = 2, float ratio_k1 = 2.4, float ratio_k2 = 4,
-		float min_radius = 5, float max_radius = 50, float ellipse_error_pixel = 0.5,
-		MarkPointColorType color_type = BlackDownWhiteUp, CodePointBitesType code_bites_type = CodeBites15,
-		DetectContoursMethod image_process_method = OTSU_Method, SubPixelPosMethod subpixel_pos_method = Gray_Centroid);
-	
 	//棋盘标定板角点识别
 	static bool detectCheckerboard(cv::Mat I, std::vector<cv::Point2f>& corner_points, cv::Size& wh_check, double peakThreshold = 0.15, bool highDistortion = false, bool usePartial = false);
 	static bool detectcodecircle(cv::Mat ori_image, cv::Mat& code_point_mat, std::vector<std::vector<cv::Point>> & contours_pixel,
@@ -127,28 +94,8 @@ public:
 private:
 	//图像预处理
 	static bool ImagePreprocess(const cv::Mat& ori_image_mat, cv::Mat& processed_image_mat);
-	static cv::Mat Adaptive_Canny(const cv::Mat& src, int apertureSize, bool L2gradient);
-	static cv::Mat _get_canny_result(const cv::Mat& map);
-	static void _hysteresis_thresholding(std::deque<int>& mapIndicesX, std::deque<int>& mapIndicesY, cv::Mat& map);
-	static void _non_maximum_suppression(const cv::Mat& NMSImage, cv::Mat& map, std::deque<int>& mapIndicesX,
-		std::deque<int>& mapIndicesY, int low, int high);
-	static void _calculate_hysteresis_threshold_value(const cv::Mat& dx, const cv::Mat& dy, const cv::Mat& magnitudes,
-		const cv::Mat& angles, cv::Mat& NMSImage, int& low, int& high);
-	static void _sobel_gradient(const cv::Mat& mat, cv::Mat& dx, cv::Mat& dy, cv::Mat& magnitudes, cv::Mat& angles,
-		int apertureSize, bool L2gradient);
-	//检测闭合的轮廓线并存入序列
 	static bool DetectClosedContours(const cv::Mat& image_mat, std::vector<std::vector<cv::Point>>& contours, DetectContoursMethod image_process_method);
-	//二值图，闭合边缘追踪
-	static bool TraceEdge(int start_y, int start_x, int y, int x,
-		std::vector<cv::Point>* edge_vector, cv::Mat* cannyed_image_mat, cv::Mat* result_mat, bool* is_contour_closed);
-	//自己写的Canny算子
-	static bool SelfCannyMethod(const cv::Mat& ori_image_mat, cv::Mat& output_image_mat, float canny_low_thresh, float canny_high_thresh,
-		std::vector<std::vector<cv::Point>>& edge_point_list);
-	//canny算子边缘追踪，高低阈值
-	static bool FindCannyEdge(int start_y, int start_x, int y, int x,
-		cv::Mat* low_threshold_mat, cv::Mat* high_threshold_mat, cv::Mat* search_sign_mat, std::vector<cv::Point>* edge_point_vector, bool* is_contour_closed);
-
-	//条件准则约束，筛选边缘轮廓
+	
 	//ellipse_pars - n*6  center_x,center_y,r_a,r_b,angle_inPI,ellipse_error,contours_index,ID
 	static bool FilterEllipseContours(const std::vector<std::vector<cv::Point>>& contours, int min_radius_pixel, int max_radius_pixel, float ellipse_error_pixel,
 		QList<QList<float>>& ellipse_pars, double max_aspect_ratio = 2, int min_points = 6, int min_contour_num = 8
@@ -167,8 +114,6 @@ private:
 		QList<QList<float>>& ellipse_pars,
 		float delta_Mt = 50, float fore_stdDev = 100, float back_stdDev = 100);
 
-	static bool EllipseGrayJudgeForPointCSI2(const cv::Mat& image_mat, float center_x, float center_y,
-		float ellipse_a, float ellipse_b, float angle_in_pi, float ratio_k);
 	static bool EllipseGrayJudgeForPointCSI(const cv::Mat& image_mat, float center_x, float center_y,
 		float ellipse_a, float ellipse_b, float angle_in_pi, float ratio_k,
 		float& out_std);
@@ -198,51 +143,14 @@ private:
 		float angle_in_pi, const std::vector<cv::Point>& contour_points,
 		float& sub_pixel_center_x, float& sub_pixel_center_y, std::vector<cv::Point2f>* subpixel_edge_points = NULL, MarkPointColorType color_type = BlackDownWhiteUp);
 
-	static bool FindSubPixelPosOfCircleCenter20140210(const cv::Mat& image_mat, float center_x, float center_y, float ellipse_a, float ellipse_b,
-		float angle_in_pi, const std::vector<cv::Point>& contour_points,
-		float& sub_pixel_center_x, float& sub_pixel_center_y, std::vector<cv::Point2f>* subpixel_edge_points = NULL, SubPixelPosMethod subPixel_method = NoSubPixel_Match, MarkPointColorType color_type = BlackDownWhiteUp);
-
 	//获取椭圆局部感兴趣区域
 	static QRect GetEllipseROIRect(const cv::Mat& image_mat, float center_x, float center_y, float ellipse_a, float ellipse_b, float angle_in_pi);
 
-	//**********Otsu方法图像二值化，返回二值化阈值,支持高比特
-	static float DICOTSU20140215(const cv::Mat& ori_image, int total_level = 256);
 
 	//******如果没有指定，黑底白点或白底黑点时，判断是哪种类型
 	static MarkPointColorType JudgeTargetColorType(const cv::Mat& sub_mat, float center_x_insubmat, float center_y_insubmat, float ellipse_a, float ellipse_b, float angle_in_pi);
 
-	//******一种获得局部阈值的放法， 阈值 = (目标区域平均灰度 + 背景区域平局灰度)/2
-	static float CalThresholdInSubsetMat(const cv::Mat& sub_mat, float center_x_insubmat, float center_y_insubmat, float ellipse_a, float ellipse_b, float angle_in_pi);
 
-	//*****一种获取局部阈值的方法，轮廓边缘灰度平均值
-	static float CalThresholdInSubsetMat2(const cv::Mat& image_mat, const std::vector<cv::Point>& contour_points);
-
-	//*********灰度重心法计算局部重心
-	static bool CalCentriodBySubsetMat(const cv::Mat& subset_mat, float thresh_old, float& sub_center_x, float& sub_center_y,
-		MarkPointColorType color_type = BlackDownWhiteUp, SubPixelPosMethod subPixel_method = Gray_Centroid);
-
-	//**********获得重心法灰度权重
-	static float CalWeightOfCentriod(float gray_value, float gray_threshold, MarkPointColorType color_type = BlackDownWhiteUp,
-		SubPixelPosMethod subPixel_method = Gray_Centroid);
-
-	//*******计算点的灰度梯度幅值和角度（G）
-	static void CalGrayGradientBySobel(const cv::Mat& image_mat, int i, int j, float* gray_gradient, float* gradient_sita = NULL);
-
-	//*********曲率滤波，计算连续边缘点的曲率
-	static void CalCurvatureFromEdgePoints(const std::vector<cv::Point2f>& edge_points, std::vector<float>& curvature_vector);
-
-	//************根据拟合误差，筛选部分点重新选点进行拟合
-	static void ReduceBadEllipseFitPoints(std::vector<cv::Point2f>& edge_points, float center_x, float center_y, float ellipse_a, float ellipse_b, float angle_in_pi);
-
-	//************测试用显示轮廓
-	static void ShowContous(int image_width, int image_height, std::vector<std::vector<cv::Point>>& contours, QList<QList<float>>& ellipse_pars);
-
-	//**************平均值****
-	static int AverageOfList(QList<int>& list_value);
-
-	//*****************canny算子自适应阈值Otsu法确定高阈值Th2，Th1= 0.5Th2；
-	//返回处于哪一等级时类间方差最大
-	static double OTSUForCannyAdaptiveHighTh(cv::Mat ori_image, int total_level = 256);
 
 	//*********************获取由椭圆圆心发出射线与编码环两个交点之间的线段上的灰度值******************
 	//image_mat-输入原始图像
@@ -250,6 +158,9 @@ private:
 	//point2-输入交点2坐标
 	//返回一系列数
 	static QList<int> GetALineGrayList(cv::Mat image_mat, QPoint point1, QPoint point2);
+
+	//**************平均值****
+	static int AverageOfList(QList<int>& list_value);
 
 	static double MeanValue(QList<float> value_list);
 	//*************************获取一系列数的中值*********************************
@@ -259,9 +170,6 @@ private:
 
 	//***********二进制转十进制，输入list_code2二进制数，输出return十进制值**********************
 	static int Change2To10(QList<int> list_code2);
-
-	//
-	static void WirteMatToFile(cv::Mat mat, QString file_name = "mat");
 
 	static bool FilterEllipseContours_for_distance(std::vector<std::vector<cv::Point>> contours, QList<QList<float>>& ellipse_pars);
 
@@ -279,9 +187,6 @@ private:
 	//计算点到点之间距离
 	static float PointToPointDistance(cv::Point2f p1, cv::Point2f p2);
 
-	//static bool secondDerivCornerMetric(cv::Mat I, cv::Mat& cxy, cv::Mat& c45, cv::Mat& Ix, cv::Mat& Iy, cv::Mat& Ixy, cv::Mat& I_45_45, double sigma = 2.0, bool highDistortionl = false);
-	
-	//static bool find_corner_peaks(cv::Mat metric, cv::Mat& loc, double peakThreshold = 0.15);
 };
 
 #endif // IMAGEDETECTMETHOD_H
