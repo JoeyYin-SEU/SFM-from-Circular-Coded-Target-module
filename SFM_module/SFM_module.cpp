@@ -3,6 +3,15 @@
 SFM_module::SFM_module(QWidget *parent)
 	: QMainWindow(parent)
 {
+	//cv::Mat Circle_image_New = cv::imread("C:\\Ta2.bmp", cv::IMREAD_GRAYSCALE);
+	//cv::Mat code_point_temp;
+	//std::vector<std::vector<cv::Point>> pixels;
+	//ImageDetectMethod::detectcodecircle(Circle_image_New, code_point_temp, pixels, 2,
+	//	2.4, 4,
+	//	2, 150,
+	//	1, MarkPointColorType::BlackDownWhiteUp, CodePointBitesType::CodeBites15, DetectContoursMethod::CANNY_Method);
+
+	//std::cout<< code_point_temp.at<float>(0, 1) << "\t" << code_point_temp.at<float>(0, 2) << "\n";
 	ui.setupUi(this);
 	init_box();
 	connect(ui.camera_model_pushButton, SIGNAL(clicked()), this, SLOT(show_setting_window()));
@@ -628,7 +637,7 @@ void SFM_module::update_show_view_once(cv::Mat image, int show_index)
 						draw_R = draw_R > dis_now ? dis_now : draw_R;
 						double r_now = sqrt(pow(KeyPoint_code_serial[show_index][pp].r_a, 2)
 							+ pow(KeyPoint_code_serial[show_index][pp].r_b, 2));
-						draw_R_min = draw_R_min > r_now ? r_now : draw_R_min;
+						draw_R_min = draw_R_min > r_now/5.0 ? r_now/5.0 : draw_R_min;
 					}
 				}
 				draw_R /= 5;
@@ -639,7 +648,17 @@ void SFM_module::update_show_view_once(cv::Mat image, int show_index)
 			draw_thick = draw_thick < 1 ? 1 : draw_thick;
 			if (Result_contours_serial.size() > show_index)
 			{
-				cv::drawContours(cur_img, Result_contours_serial[show_index], -1, cv::Scalar(0, 255, 0), draw_thick);
+				std::vector<std::vector<cv::Point>> Con_temp;
+				for (int pp = 0; pp < Result_contours_serial[show_index].size(); pp++)
+				{
+					std::vector<cv::Point> C_tt;
+					for (int qq = 0; qq < Result_contours_serial[show_index][pp].size(); qq++)
+					{
+						C_tt.push_back(cv::Point(Result_contours_serial[show_index][pp][qq].x, Result_contours_serial[show_index][pp][qq].y));
+					}
+					Con_temp.push_back(C_tt);
+				}
+				cv::drawContours(cur_img, Con_temp, -1, cv::Scalar(0, 255, 0), draw_thick);
 			}
 			for (int pp = 0; pp < KeyPoint_code_serial[show_index].size(); pp++)
 			{
@@ -1245,9 +1264,9 @@ void SFM_module::update_show_view()
 					double dis_now = sqrt(pow(KeyPoint_code_serial[ui.show_detect_spinBox->value() - 1][pp].x - KeyPoint_code_serial[ui.show_detect_spinBox->value() - 1][qq].x, 2)
 						+ pow(KeyPoint_code_serial[ui.show_detect_spinBox->value() - 1][pp].y - KeyPoint_code_serial[ui.show_detect_spinBox->value() - 1][qq].y, 2));
 					draw_R = draw_R > dis_now ? dis_now : draw_R;
-					double r_now = sqrt(pow(KeyPoint_code_serial[ui.show_detect_spinBox->value() - 1][pp].r_a, 2)
-						+ pow(KeyPoint_code_serial[ui.show_detect_spinBox->value() - 1][pp].r_b, 2));
-					draw_R_min = draw_R_min > r_now ? r_now : draw_R_min;
+					double r_now = std::min((KeyPoint_code_serial[ui.show_detect_spinBox->value() - 1][pp].r_a)
+						, (KeyPoint_code_serial[ui.show_detect_spinBox->value() - 1][pp].r_b));
+					draw_R_min = draw_R_min > r_now/5.0 ? r_now/5.0 : draw_R_min;
 				}
 			}
 			draw_R /= 5;
@@ -1258,7 +1277,17 @@ void SFM_module::update_show_view()
 		draw_thick = draw_thick < 1 ? 1 : draw_thick;
 		if (Result_contours_serial.size() > (ui.show_detect_spinBox->value() - 1))
 		{
-			cv::drawContours(cur_img, Result_contours_serial[ui.show_detect_spinBox->value() - 1], -1, cv::Scalar(0, 255, 0), draw_thick);
+			std::vector<std::vector<cv::Point>> Con_temp;
+			for (int pp = 0; pp < Result_contours_serial[ui.show_detect_spinBox->value() - 1].size(); pp++)
+			{
+				std::vector<cv::Point> C_tt;
+				for (int qq = 0; qq < Result_contours_serial[ui.show_detect_spinBox->value() - 1][pp].size(); qq++)
+				{
+					C_tt.push_back(cv::Point(Result_contours_serial[ui.show_detect_spinBox->value() - 1][pp][qq].x, Result_contours_serial[ui.show_detect_spinBox->value() - 1][pp][qq].y));
+				}
+				Con_temp.push_back(C_tt);
+			}
+			cv::drawContours(cur_img, Con_temp, -1, cv::Scalar(0, 255, 0), draw_thick);
 		}
 		for (int pp = 0; pp < KeyPoint_code_serial[ui.show_detect_spinBox->value() - 1].size(); pp++)
 		{/*
@@ -2052,7 +2081,7 @@ void SFM_module::calculate_multiview()
 		std::vector<deltect_coded_circle_thread*> thread_for_detect_calcu;
 		for (int ii = 0; ii < Image_serial_name.size(); ii++)
 		{
-			std::vector<std::vector<cv::Point>> contours_now;
+			std::vector<std::vector<cv::Point2f>> contours_now;
 			std::vector<Coded_detect_inf> dect_code_temp;
 			KeyPoint_code_serial.push_back(dect_code_temp);
 			Result_contours_serial.push_back(contours_now);
@@ -2064,7 +2093,8 @@ void SFM_module::calculate_multiview()
 			}
 			thread_for_detect_calcu_index.push_back(ii);
 			thread_for_detect_calcu_finished.push_back(false);
-			thread_for_detect_calcu.push_back(new deltect_coded_circle_thread(Image_serial_name[ii], SFM_setting_window->ui.r_k_doubleSpinBox->value(),
+			thread_for_detect_calcu.push_back(new deltect_coded_circle_thread(Image_serial_name[ii], 
+				SFM_setting_window->ui.r_k_doubleSpinBox->value(),
 				SFM_setting_window->ui.r_k_1_doubleSpinBox->value(), SFM_setting_window->ui.r_k_2_doubleSpinBox->value(),
 				SFM_setting_window->ui.min_radius_doubleSpinBox->value(), SFM_setting_window->ui.max_radius_doubleSpinBox->value(),
 				SFM_setting_window->ui.max_radius_error_doubleSpinBox->value(), mark_type, circle_code_type,
@@ -2187,7 +2217,7 @@ void SFM_module::calculate_multiview()
 	qApp->processEvents();
 
 	std::vector<std::vector<Coded_detect_inf>> KeyPoint_code_serial_copy;
-	std::vector<std::vector<std::vector<cv::Point>> > KeyPoint_contour_serial_copy;
+	std::vector<std::vector<std::vector<cv::Point2f>> > KeyPoint_contour_serial_copy;
 	std::vector<int> KeyPoint_code_serial_index_copy;
 	for (int ii = 0; ii < KeyPoint_Enable_serial.size(); ii++)
 	{
@@ -2510,6 +2540,8 @@ void SFM_module::calculate_multiview()
 		{
 			break;
 		}
+		ui.show_detect_horizontalSlider->setValue(KeyPoint_code_serial_index_copy[matched_3d.top().position] + 1);
+		qApp->processEvents();
 		int new_n = 0;
 		double min_ratio;
 		update_points_in_point(Keypoints_in_queue,
@@ -2547,121 +2579,6 @@ void SFM_module::calculate_multiview()
 			}
 		}
 
-		//std::vector<Eigen::Quaterniond> camQvec_part;
-		//std::vector<Eigen::Vector3d> camTvec_part;
-		//std::vector<std::vector<cv::Point2d>> Re_project_Map_part;
-		//for (int pp = 0; pp < Keypoints_R_in_queue.size(); pp++)
-		//{
-		//	Eigen::Matrix<double, 3, 3> matrix_temp;
-		//	cv::cv2eigen(Keypoints_R_in_queue[pp], matrix_temp);
-		//	camQvec_part.push_back(Eigen::Quaterniond(matrix_temp));
-		//	Eigen::Matrix<double, 3, 1> matrix_temp2;
-		//	cv::cv2eigen(Keypoints_T_in_queue[pp], matrix_temp2);
-		//	camTvec_part.push_back(Eigen::Vector3d(matrix_temp2));
-		//}
-		//need_optimize_C = true;
-		//if (SFM_setting_window->ui.fixed_c_checkBox->isChecked())
-		//{
-		//	need_optimize_C = false;
-		//}
-		//else if (SFM_setting_window->ui.optimize_checkBox->isChecked())
-		//{
-		//	need_optimize_C = false;
-		//}
-		//else
-		//{
-		//	if (Keypoints_in_queue.size() < SFM_setting_window->ui.min_cxcy_BA_spinBox->value())
-		//	{
-		//		need_optimize_C = false;
-		//	}
-		//}
-		//need_optimize_F = true;
-		//if (SFM_setting_window->ui.fixed_f_checkBox->isChecked())
-		//{
-		//	need_optimize_F = false;
-		//}
-		//else if (SFM_setting_window->ui.optimize_checkBox->isChecked())
-		//{
-		//	need_optimize_F = false;
-		//}
-		//else
-		//{
-		//	if (Keypoints_in_queue.size() < SFM_setting_window->ui.min_cxcy_BA_spinBox->value())
-		//	{
-		//		need_optimize_F = false;
-		//	}
-		//}
-		//ceres::Solver::Summary summary_part;
-		//optimize_SFM_incremental_thread thread_cal_part(Keypoints_in_queue, xyz_sfm_ori, camQvec_part, camTvec_part, Re_project_Map_part, K, Dis_K, Dis_P, Dis_T, &summary_part
-		//	, SFM_setting_window->ui.max_iter_spinBox->value()
-		//	, ((double)SFM_setting_window->ui.stop_spinBox->value())* pow(10, SFM_setting_window->ui.stop_spinBox_2->value())
-		//	, SFM_setting_window->ui.thread_spinBox->value()
-		//	, SFM_setting_window->ui.timeout_spinBox->value()
-		//	, SFM_setting_window->ui.loss_comboBox->currentIndex(), SFM_setting_window->ui.loss_doubleSpinBox->value()
-		//	, SFM_setting_window->ui.k_distort_comboBox->currentText().toInt()
-		//	, SFM_setting_window->ui.p_distort_comboBox->currentText().toInt()
-		//	, SFM_setting_window->ui.s_distort_comboBox->currentText().toInt()
-		//	, SFM_setting_window->ui.fixed_camera_checkBox->isChecked()
-		//	, need_optimize_F
-		//	, need_optimize_C
-		//	, SFM_setting_window->ui.skew_checkBox->isChecked()
-		//	, SFM_setting_window->ui.uniform_f_checkBox->isChecked(), range_f, range_c, true);
-		//thread_cal_part.start();
-		//while (1)
-		//{
-		//	if (!thread_cal_part.isRunning())
-		//	{
-		//		break;
-		//	}
-		//	QString inf_log = "";
-		//	for (int ss = summary_part.iterations.size() - 1; ss >= 0; ss--)
-		//	{
-		//		inf_log = inf_log + QString("%1").arg(ss + 1, 4, 10, QLatin1Char('0')) + tr(". ");
-		//		inf_log = inf_log + tr("[Cost]:") + QString::number(summary_part.iterations[ss].cost, 'e', 3) + tr("; ");
-		//		inf_log = inf_log + tr("[Gradient Norm]:") + QString::number(summary_part.iterations[ss].gradient_norm, 'e', 3) + tr("; ");
-		//		inf_log = inf_log + tr("[Step Norm]:") + QString::number(summary_part.iterations[ss].step_norm, 'e', 3) + tr("; ");
-		//		inf_log = inf_log + tr("[Iteration Time(second)]:") + QString::number(summary_part.iterations[ss].iteration_time_in_seconds, 'e', 3) + tr(";");
-		//		inf_log = inf_log + tr("\n");
-		//	}
-		//	cam_log_ui->ui.textEdit->setText(inf_log);
-		//	loop_sleep(20);
-		//}
-		//if (KeyPoint_code_serial_index_copy.size()==0)
-		//{
-		//	int aaaa = 1;
-		//}
-		//xyz_sfm_ori = thread_cal_part.point_clouds_thread;
-		//camQvec_part = thread_cal_part.camQvec_thread;
-		//camTvec_part = thread_cal_part.camTvec_thread;
-		//Re_project_Map_part = thread_cal_part.Re_project_Map_thread;
-		//K = thread_cal_part.camK_thread;
-		//Dis_K = thread_cal_part.camDK_thread;
-		//Dis_P = thread_cal_part.camDP_thread;
-		//Dis_T = thread_cal_part.camDT_thread;
-
-		//for (int pp = 1; pp < Keypoints_R_in_queue.size(); pp++)
-		//{
-		//	cv::Mat mat_temp;
-		//	cv::eigen2cv(camQvec_part[pp].matrix(), mat_temp);
-		//	Keypoints_R_in_queue[pp] = mat_temp;
-		//	cv::Mat mat_temp2;
-		//	cv::eigen2cv(camTvec_part[pp], mat_temp2);
-		//	Keypoints_T_in_queue[pp] = mat_temp2;
-		//}
-
-		//str_inf_for_log =
-		//	tr("Optimized partly camera parameters:") +
-		//	tr("Fx=") + QString::number(K[0]) + tr("; ") +
-		//	tr("Fy=") + QString::number(K[1]) + tr("; ") +
-		//	tr("Cx=") + QString::number(K[2]) + tr("; ") +
-		//	tr("Cy=") + QString::number(K[3]) + tr("; ") +
-		//	tr("Skew=") + QString::number(K[4]) + tr("; ") +
-		//	tr("Distortion_K=[") + QString::number(Dis_K[0]) + tr(",") + QString::number(Dis_K[1]) + tr(",") + QString::number(Dis_K[2]) + tr(",") + QString::number(Dis_K[3]) + tr(",") +
-		//	QString::number(Dis_K[4]) + tr(",") + QString::number(Dis_K[5]) + tr("]; ") +
-		//	tr("Distortion_P=[") + QString::number(Dis_P[0]) + tr(",") + QString::number(Dis_P[1]) + tr("]; ") +
-		//	tr("Distortion_T=[") + QString::number(Dis_T[0]) + tr(",") + QString::number(Dis_T[1]) + tr(",") + QString::number(Dis_T[2]) + tr(",") + QString::number(Dis_T[3]) + tr("].\n")
-		//	+ str_inf_for_log;
-		//cam_log_ui->ui.textEdit->setText(str_inf_for_log);
 		if (((Keypoints_in_queue.size() - 2) % SFM_setting_window->ui.BA_interval_spinBox->value()) == 0 && xyz_sfm_ori.size() != 0)
 		{
 			std::vector<Eigen::Quaterniond> camQvec;
@@ -2710,7 +2627,9 @@ void SFM_module::calculate_multiview()
 				}
 			}
 			ceres::Solver::Summary summary;
-			optimize_SFM_incremental_thread thread_cal(Keypoints_in_queue, xyz_sfm_ori, camQvec, camTvec, Re_project_Map, K, Dis_K, Dis_P, Dis_T, &summary
+			ceres::Solver::Summary summary_AG;
+			optimize_SFM_incremental_thread thread_cal(Keypoints_in_queue, xyz_sfm_ori, camQvec, camTvec, 
+				Re_project_Map, K, Dis_K, Dis_P, Dis_T, &summary,&summary_AG
 				, SFM_setting_window->ui.max_iter_spinBox->value()
 				, ((double)SFM_setting_window->ui.stop_spinBox->value())* pow(10, SFM_setting_window->ui.stop_spinBox_2->value())
 				, SFM_setting_window->ui.thread_spinBox->value()
@@ -2723,7 +2642,8 @@ void SFM_module::calculate_multiview()
 				, need_optimize_F
 				, need_optimize_C
 				, SFM_setting_window->ui.skew_checkBox->isChecked()
-				, SFM_setting_window->ui.uniform_f_checkBox->isChecked(), range_f, range_c);
+				, SFM_setting_window->ui.uniform_f_checkBox->isChecked(), range_f, range_c
+				, SFM_setting_window->ui.max_pixel_error_doubleSpinBox->value());
 			thread_cal.start();
 			while (1)
 			{
@@ -2739,6 +2659,15 @@ void SFM_module::calculate_multiview()
 					inf_log = inf_log + tr("[Gradient Norm]:") + QString::number(summary.iterations[ss].gradient_norm, 'e', 3) + tr("; ");
 					inf_log = inf_log + tr("[Step Norm]:") + QString::number(summary.iterations[ss].step_norm, 'e', 3) + tr("; ");
 					inf_log = inf_log + tr("[Iteration Time(second)]:") + QString::number(summary.iterations[ss].iteration_time_in_seconds, 'e', 3) + tr(";");
+					inf_log = inf_log + tr("\n");
+				}
+				for (int ss = summary_AG.iterations.size() - 1; ss >= 0; ss--)
+				{
+					inf_log = inf_log + QString("%1").arg(ss + 1, 4, 10, QLatin1Char('0')) + tr(". ");
+					inf_log = inf_log + tr("[Cost]:") + QString::number(summary_AG.iterations[ss].cost, 'e', 3) + tr("; ");
+					inf_log = inf_log + tr("[Gradient Norm]:") + QString::number(summary_AG.iterations[ss].gradient_norm, 'e', 3) + tr("; ");
+					inf_log = inf_log + tr("[Step Norm]:") + QString::number(summary_AG.iterations[ss].step_norm, 'e', 3) + tr("; ");
+					inf_log = inf_log + tr("[Iteration Time(second)]:") + QString::number(summary_AG.iterations[ss].iteration_time_in_seconds, 'e', 3) + tr(";");
 					inf_log = inf_log + tr("\n");
 				}
 				cam_log_ui->ui.textEdit->setText(inf_log);
@@ -3045,7 +2974,9 @@ void SFM_module::calculate_multiview()
 		need_optimize_F = false;
 	}
 	ceres::Solver::Summary summary;
-	optimize_SFM_incremental_thread thread_cal(Keypoints_in_queue, xyz_sfm_ori, camQvec, camTvec, Re_project_Map, K, Dis_K, Dis_P, Dis_T, &summary
+	ceres::Solver::Summary summary_AG;
+	optimize_SFM_incremental_thread thread_cal(Keypoints_in_queue, xyz_sfm_ori, camQvec, camTvec
+		, Re_project_Map, K, Dis_K, Dis_P, Dis_T, &summary, &summary_AG
 		, SFM_setting_window->ui.max_iter_spinBox->value()
 		, ((double)SFM_setting_window->ui.stop_spinBox->value())* pow(10, SFM_setting_window->ui.stop_spinBox_2->value())
 		, SFM_setting_window->ui.thread_spinBox->value()
@@ -3058,7 +2989,8 @@ void SFM_module::calculate_multiview()
 		, need_optimize_F
 		, need_optimize_C
 		, SFM_setting_window->ui.skew_checkBox->isChecked()
-		, SFM_setting_window->ui.uniform_f_checkBox->isChecked(), range_f, range_c);
+		, SFM_setting_window->ui.uniform_f_checkBox->isChecked(), range_f, range_c
+		, SFM_setting_window->ui.max_pixel_error_doubleSpinBox->value());
 	thread_cal.start();
 	while (1)
 	{
@@ -3074,6 +3006,15 @@ void SFM_module::calculate_multiview()
 			inf_log = inf_log + tr("[Gradient Norm]:") + QString::number(summary.iterations[ss].gradient_norm, 'e', 3) + tr("; ");
 			inf_log = inf_log + tr("[Step Norm]:") + QString::number(summary.iterations[ss].step_norm, 'e', 3) + tr("; ");
 			inf_log = inf_log + tr("[Iteration Time(second)]:") + QString::number(summary.iterations[ss].iteration_time_in_seconds, 'e', 3) + tr(";");
+			inf_log = inf_log + tr("\n");
+		}
+		for (int ss = summary_AG.iterations.size() - 1; ss >= 0; ss--)
+		{
+			inf_log = inf_log + QString("%1").arg(ss + 1, 4, 10, QLatin1Char('0')) + tr(". ");
+			inf_log = inf_log + tr("[Cost]:") + QString::number(summary_AG.iterations[ss].cost, 'e', 3) + tr("; ");
+			inf_log = inf_log + tr("[Gradient Norm]:") + QString::number(summary_AG.iterations[ss].gradient_norm, 'e', 3) + tr("; ");
+			inf_log = inf_log + tr("[Step Norm]:") + QString::number(summary_AG.iterations[ss].step_norm, 'e', 3) + tr("; ");
+			inf_log = inf_log + tr("[Iteration Time(second)]:") + QString::number(summary_AG.iterations[ss].iteration_time_in_seconds, 'e', 3) + tr(";");
 			inf_log = inf_log + tr("\n");
 		}
 		cam_log_ui->ui.textEdit->setText(inf_log);
@@ -3242,7 +3183,8 @@ void SFM_module::calculate_multiview()
 			oQProgressDialog.setMinimumDuration(0);
 			oQProgressDialog.show();
 			oQProgressDialog.setValue(iter + 1);
-			ceres::Solver::Summary summary_ori;
+			std::vector<ceres::Solver::Summary> summary_ori;
+			summary_ori.resize(xyz_sfm_ori.size());
 			calculate_circle_thread thread_cal_circleori(xyz_sfm_ori, Keypoints_contours_in_queue, Keypoints_in_queue, Result_Ori,
 				camQvec, camTvec, K, Dis_K, Dis_P, Dis_T, &summary_ori
 				,  SFM_setting_window->ui.max_circle_iter_spinBox->value()
@@ -3258,14 +3200,23 @@ void SFM_module::calculate_multiview()
 					break;
 				}
 				QString inf_log = "";
-				for (int ss = summary_ori.iterations.size() - 1; ss >= 0; ss--)
+				for (int ff = 0; ff < xyz_sfm_ori.size(); ff++)
 				{
-					inf_log = inf_log + QString("%1").arg(ss + 1, 4, 10, QLatin1Char('0')) + tr(". ");
-					inf_log = inf_log + tr("[Cost]:") + QString::number(summary_ori.iterations[ss].cost, 'e', 3) + tr("; ");
-					inf_log = inf_log + tr("[Gradient Norm]:") + QString::number(summary_ori.iterations[ss].gradient_norm, 'e', 3) + tr("; ");
-					inf_log = inf_log + tr("[Step Norm]:") + QString::number(summary_ori.iterations[ss].step_norm, 'e', 3) + tr("; ");
-					inf_log = inf_log + tr("[Iteration Time(second)]:") + QString::number(summary_ori.iterations[ss].iteration_time_in_seconds, 'e', 3) + tr(";");
-					inf_log = inf_log + tr("\n");
+					if (summary_ori[ff].iterations.size() == 0)
+					{
+						continue;
+					}
+					inf_log =  tr("------------------------------------------") + "\n";
+					inf_log = inf_log + tr("Points:") + QString::number(ff + 1) + tr("/") + QString::number(xyz_sfm_ori.size()) + "\n";
+					for (int ss = summary_ori[ff].iterations.size() - 1; ss >= 0; ss--)
+					{
+						inf_log = inf_log + QString("%1").arg(ss + 1, 4, 10, QLatin1Char('0')) + tr(". ");
+						inf_log = inf_log + tr("[Cost]:") + QString::number(summary_ori[ff].iterations[ss].cost, 'e', 3) + tr("; ");
+						inf_log = inf_log + tr("[Gradient Norm]:") + QString::number(summary_ori[ff].iterations[ss].gradient_norm, 'e', 3) + tr("; ");
+						inf_log = inf_log + tr("[Step Norm]:") + QString::number(summary_ori[ff].iterations[ss].step_norm, 'e', 3) + tr("; ");
+						inf_log = inf_log + tr("[Iteration Time(second)]:") + QString::number(summary_ori[ff].iterations[ss].iteration_time_in_seconds, 'e', 3) + tr(";");
+						inf_log = inf_log + tr("\n");
+					}
 				}
 				cam_log_ui->ui.textEdit->setText(inf_log);
 				loop_sleep(20);
@@ -3297,21 +3248,23 @@ void SFM_module::calculate_multiview()
 			std::vector<bool> thread_for_circle_update_calcu_finished;
 			std::vector<update_coded_circle_pixel_thread*> thread_for_circle_update_calcu;
 			for (int ii = 0; ii < Keypoints_in_queue.size(); ii++)
-			//for (int ii = 81; ii < 82; ii++)
 			{
-				thread_for_circle_update_calcu_index.push_back(ii);
-				thread_for_circle_update_calcu_finished.push_back(false);
-				thread_for_circle_update_calcu.push_back(new update_coded_circle_pixel_thread(K_serial[ii], camQvec[ii].matrix(), camTvec[ii], Keypoints_in_queue[ii],
-					Result_Ori,xyz_sfm_ori, Keypoints_contours_in_queue[ii],
-					Image_serial_name[Keypoints_index_in_queue[ii]], SFM_setting_window->ui.r_k_doubleSpinBox->value(),
-					SFM_setting_window->ui.r_k_1_doubleSpinBox->value(), SFM_setting_window->ui.r_k_2_doubleSpinBox->value(),
-					SFM_setting_window->ui.min_radius_doubleSpinBox->value(), SFM_setting_window->ui.max_radius_doubleSpinBox->value(),
-					SFM_setting_window->ui.max_radius_error_doubleSpinBox->value(), mark_type, circle_code_type,
-					contour_method, sub_pixel_method, SFM_setting_window->ui.max_aspect_ratio_doubleSpinBox->value()
-					, SFM_setting_window->ui.min_contour_points_spinBox->value(), SFM_setting_window->ui.min_contour_number_spinBox->value()
-					, SFM_setting_window->ui.min_gap_spinBox->value()
-					, SFM_setting_window->ui.max_foreground_std_spinBox->value(), SFM_setting_window->ui.max_background_std_spinBox->value()));
-				thread_for_circle_update_calcu[thread_for_circle_update_calcu.size() - 1]->setAutoDelete(false);
+				//if (Keypoints_index_in_queue[ii] == 5)
+				{
+					thread_for_circle_update_calcu_index.push_back(ii);
+					thread_for_circle_update_calcu_finished.push_back(false);
+					thread_for_circle_update_calcu.push_back(new update_coded_circle_pixel_thread(K_serial[ii], camQvec[ii].matrix(), camTvec[ii], Keypoints_in_queue[ii],
+						Result_Ori, xyz_sfm_ori, Keypoints_contours_in_queue[ii],
+						Image_serial_name[Keypoints_index_in_queue[ii]], SFM_setting_window->ui.r_k_doubleSpinBox->value(),
+						SFM_setting_window->ui.r_k_1_doubleSpinBox->value(), SFM_setting_window->ui.r_k_2_doubleSpinBox->value(),
+						SFM_setting_window->ui.min_radius_doubleSpinBox->value(), SFM_setting_window->ui.max_radius_doubleSpinBox->value(),
+						SFM_setting_window->ui.max_radius_error_doubleSpinBox->value(), mark_type, circle_code_type,
+						contour_method, sub_pixel_method, SFM_setting_window->ui.max_aspect_ratio_doubleSpinBox->value()
+						, SFM_setting_window->ui.min_contour_points_spinBox->value(), SFM_setting_window->ui.min_contour_number_spinBox->value()
+						, SFM_setting_window->ui.min_gap_spinBox->value()
+						, SFM_setting_window->ui.max_foreground_std_spinBox->value(), SFM_setting_window->ui.max_background_std_spinBox->value()));
+					thread_for_circle_update_calcu[thread_for_circle_update_calcu.size() - 1]->setAutoDelete(false);
+				}
 			}
 
 			oQProgressDialog.setWindowModality(Qt::ApplicationModal);
@@ -3538,7 +3491,9 @@ void SFM_module::calculate_multiview()
 				need_optimize_F = false;
 			}
 			ceres::Solver::Summary summary_sfm;
-			optimize_SFM_incremental_thread thread_cal_new(Keypoints_in_queue, xyz_sfm_ori, camQvec, camTvec, Re_project_Map, K, Dis_K, Dis_P, Dis_T, &summary_sfm
+			ceres::Solver::Summary summary_sfm_AG;
+			optimize_SFM_incremental_thread thread_cal_new(Keypoints_in_queue, xyz_sfm_ori, camQvec, camTvec, 
+				Re_project_Map, K, Dis_K, Dis_P, Dis_T, &summary_sfm,&summary_sfm_AG
 				, SFM_setting_window->ui.max_iter_spinBox->value()
 				, ((double)SFM_setting_window->ui.stop_spinBox->value()) * pow(10, SFM_setting_window->ui.stop_spinBox_2->value())
 				, SFM_setting_window->ui.thread_spinBox->value()
@@ -3551,7 +3506,8 @@ void SFM_module::calculate_multiview()
 				, need_optimize_F
 				, need_optimize_C
 				, SFM_setting_window->ui.skew_checkBox->isChecked()
-				, SFM_setting_window->ui.uniform_f_checkBox->isChecked(), range_f, range_c);
+				, SFM_setting_window->ui.uniform_f_checkBox->isChecked(), range_f, range_c
+				, SFM_setting_window->ui.max_pixel_error_doubleSpinBox->value());
 			thread_cal_new.start();
 			while (1)
 			{
@@ -3567,6 +3523,15 @@ void SFM_module::calculate_multiview()
 					inf_log = inf_log + tr("[Gradient Norm]:") + QString::number(summary_sfm.iterations[ss].gradient_norm, 'e', 3) + tr("; ");
 					inf_log = inf_log + tr("[Step Norm]:") + QString::number(summary_sfm.iterations[ss].step_norm, 'e', 3) + tr("; ");
 					inf_log = inf_log + tr("[Iteration Time(second)]:") + QString::number(summary_sfm.iterations[ss].iteration_time_in_seconds, 'e', 3) + tr(";");
+					inf_log = inf_log + tr("\n");
+				}
+				for (int ss = summary_sfm_AG.iterations.size() - 1; ss >= 0; ss--)
+				{
+					inf_log = inf_log + QString("%1").arg(ss + 1, 4, 10, QLatin1Char('0')) + tr(". ");
+					inf_log = inf_log + tr("[Cost]:") + QString::number(summary_sfm_AG.iterations[ss].cost, 'e', 3) + tr("; ");
+					inf_log = inf_log + tr("[Gradient Norm]:") + QString::number(summary_sfm_AG.iterations[ss].gradient_norm, 'e', 3) + tr("; ");
+					inf_log = inf_log + tr("[Step Norm]:") + QString::number(summary_sfm_AG.iterations[ss].step_norm, 'e', 3) + tr("; ");
+					inf_log = inf_log + tr("[Iteration Time(second)]:") + QString::number(summary_sfm_AG.iterations[ss].iteration_time_in_seconds, 'e', 3) + tr(";");
 					inf_log = inf_log + tr("\n");
 				}
 				cam_log_ui->ui.textEdit->setText(inf_log);
@@ -3729,7 +3694,7 @@ float SFM_module::kahanSum_float(std::vector<float> nums)
 	}
 	return sum;
 }
-ellipse_view_pose SFM_module::calculate_ellipse(std::vector<cv::Point> ellipse_contours,
+ellipse_view_pose SFM_module::calculate_ellipse(std::vector<cv::Point2f> ellipse_contours,
 	cv::Mat K, cv::Mat Dis, Eigen::Quaterniond R, Eigen::Vector3d T)
 {
 	std::vector<cv::Point2d> ellipse_contours_copy;
@@ -4169,11 +4134,12 @@ void SFM_module::update_points_in_point(std::vector<std::vector<Coded_detect_inf
 		}
 	}
 }
-void SFM_module::remove_calculated_index_from_pair(std::vector<std::vector<Coded_detect_inf>>& P_serial, std::vector<std::vector<std::vector<cv::Point>>>& PC_serial, std::vector<int>& P_serial_index,
+void SFM_module::remove_calculated_index_from_pair(std::vector<std::vector<Coded_detect_inf>>& P_serial, 
+	std::vector<std::vector<std::vector<cv::Point2f>>>& PC_serial, std::vector<int>& P_serial_index,
 	match_pair_group matches)
 {
 	std::vector<std::vector<Coded_detect_inf>> P_serial_copy = P_serial;
-	std::vector<std::vector<std::vector<cv::Point>>> PC_serial_copy = PC_serial;
+	std::vector<std::vector<std::vector<cv::Point2f>>> PC_serial_copy = PC_serial;
 	std::vector<int> P_serial_index_copy = P_serial_index;
 	P_serial.clear();
 	PC_serial.clear();
@@ -4188,11 +4154,12 @@ void SFM_module::remove_calculated_index_from_pair(std::vector<std::vector<Coded
 		}
 	}
 }
-void SFM_module::remove_calculated_index_from_index(std::vector<std::vector<Coded_detect_inf>>& P_serial, std::vector<std::vector<std::vector<cv::Point>>>& PC_serial, std::vector<int>& P_serial_index,
+void SFM_module::remove_calculated_index_from_index(std::vector<std::vector<Coded_detect_inf>>& P_serial, 
+	std::vector<std::vector<std::vector<cv::Point2f>>>& PC_serial, std::vector<int>& P_serial_index,
 	int match)
 {
 	std::vector<std::vector<Coded_detect_inf>> P_serial_copy = P_serial;
-	std::vector<std::vector<std::vector<cv::Point>>> PC_serial_copy = PC_serial;
+	std::vector<std::vector<std::vector<cv::Point2f>>> PC_serial_copy = PC_serial;
 	std::vector<int> P_serial_index_copy = P_serial_index;
 	P_serial.clear();
 	PC_serial.clear();
@@ -4658,7 +4625,7 @@ void SFM_module::read_KeyPoint_file(QString path_read)
 			return;
 		}
 		std::vector<Coded_detect_inf> kp_temp;
-		std::vector<std::vector<cv::Point>> contours_temp;
+		std::vector<std::vector<cv::Point2f>> contours_temp;
 		for (int pp = 0; pp < corn_size; pp++)
 		{
 			double temp_x, temp_y, temp_ra, temp_rb, temp_theta, temp_err;
@@ -4837,7 +4804,7 @@ void SFM_module::read_KeyPoint_file(QString path_read)
 			points_now_temp.fit_err = temp_err;
 			points_now_temp.pose = temp_pose;
 			kp_temp.push_back(points_now_temp);
-			std::vector<cv::Point> contours_now;
+			std::vector<cv::Point2f> contours_now;
 			return_size = fread(&temp_contours_num, sizeof(int), 1, fp);
 			if (return_size != 1)
 			{
@@ -4853,7 +4820,7 @@ void SFM_module::read_KeyPoint_file(QString path_read)
 			for (int qq = 0; qq < temp_contours_num; qq++)
 			{
 				int temp_x_contour, temp_y_contour;
-				return_size = fread(&temp_x_contour, sizeof(int), 1, fp);
+				return_size = fread(&temp_x_contour, sizeof(float), 1, fp);
 				if (return_size != 1)
 				{
 					QMessageBox::warning(this, tr("Read KeyPoint File"), tr("Read Failed!"), QMessageBox::Ok, QMessageBox::Ok);
@@ -4865,7 +4832,7 @@ void SFM_module::read_KeyPoint_file(QString path_read)
 					fclose(fp);
 					return;
 				}
-				return_size = fread(&temp_y_contour, sizeof(int), 1, fp);
+				return_size = fread(&temp_y_contour, sizeof(float), 1, fp);
 				if (return_size != 1)
 				{
 					QMessageBox::warning(this, tr("Read KeyPoint File"), tr("Read Failed!"), QMessageBox::Ok, QMessageBox::Ok);
@@ -4877,7 +4844,7 @@ void SFM_module::read_KeyPoint_file(QString path_read)
 					fclose(fp);
 					return;
 				}
-				contours_now.push_back(cv::Point(temp_x_contour, temp_y_contour));
+				contours_now.push_back(cv::Point2f(temp_x_contour, temp_y_contour));
 			}
 			contours_temp.push_back(contours_now);
 		}
@@ -5208,7 +5175,7 @@ void SFM_module::read_SFMResult_file(QString path_read)
 			return;
 		}
 		std::vector<Coded_detect_inf> kp_temp;
-		std::vector<std::vector<cv::Point>> contours_temp;
+		std::vector<std::vector<cv::Point2f>> contours_temp;
 		std::vector<cv::Point2d> error_now;
 		for (int pp = 0; pp < corn_size; pp++)
 		{
@@ -5396,7 +5363,7 @@ void SFM_module::read_SFMResult_file(QString path_read)
 			points_now_temp.fit_err = temp_err;
 			points_now_temp.pose = temp_pose;
 			kp_temp.push_back(points_now_temp);
-			std::vector<cv::Point> contours_now;
+			std::vector<cv::Point2f> contours_now;
 			return_size = fread(&temp_contours_num, sizeof(int), 1, fp);
 			if (return_size != 1)
 			{
@@ -5413,7 +5380,7 @@ void SFM_module::read_SFMResult_file(QString path_read)
 			for (int qq = 0; qq < temp_contours_num; qq++)
 			{
 				int temp_x_contour, temp_y_contour;
-				return_size = fread(&temp_x_contour, sizeof(int), 1, fp);
+				return_size = fread(&temp_x_contour, sizeof(float), 1, fp);
 				if (return_size != 1)
 				{
 					QMessageBox::warning(this, tr("Read SFM Result File"), tr("Read Failed!"), QMessageBox::Ok, QMessageBox::Ok);
@@ -5426,7 +5393,7 @@ void SFM_module::read_SFMResult_file(QString path_read)
 					fclose(fp);
 					return;
 				}
-				return_size = fread(&temp_y_contour, sizeof(int), 1, fp);
+				return_size = fread(&temp_y_contour, sizeof(float), 1, fp);
 				if (return_size != 1)
 				{
 					QMessageBox::warning(this, tr("Read SFM Result File"), tr("Read Failed!"), QMessageBox::Ok, QMessageBox::Ok);
@@ -5439,7 +5406,7 @@ void SFM_module::read_SFMResult_file(QString path_read)
 					fclose(fp);
 					return;
 				}
-				contours_now.push_back(cv::Point(temp_x_contour, temp_y_contour));
+				contours_now.push_back(cv::Point2f(temp_x_contour, temp_y_contour));
 			}
 			contours_temp.push_back(contours_now);
 
@@ -5977,14 +5944,14 @@ void SFM_module::save_KeyPoint_file(QString path_save)
 			}
 			for (int qq = 0; qq < contours_number; qq++)
 			{
-				return_size = fwrite(&(Result_contours_serial[jj][pp][qq].x), sizeof(int), 1, f);
+				return_size = fwrite(&(Result_contours_serial[jj][pp][qq].x), sizeof(float), 1, f);
 				if (return_size != 1)
 				{
 					QMessageBox::warning(this, tr("Save KeyPoint File"), tr("Save Failed!"), QMessageBox::Ok, QMessageBox::Ok);
 					fclose(f);
 					return;
 				}
-				return_size = fwrite(&(Result_contours_serial[jj][pp][qq].y), sizeof(int), 1, f);
+				return_size = fwrite(&(Result_contours_serial[jj][pp][qq].y), sizeof(float), 1, f);
 				if (return_size != 1)
 				{
 					QMessageBox::warning(this, tr("Save KeyPoint File"), tr("Save Failed!"), QMessageBox::Ok, QMessageBox::Ok);
@@ -6442,14 +6409,14 @@ void SFM_module::save_SFMResult_file(QString path_save)
 			}
 			for (int qq = 0; qq < contours_number; qq++)
 			{
-				return_size = fwrite(&(Result_contours_serial[jj][pp][qq].x), sizeof(int), 1, f);
+				return_size = fwrite(&(Result_contours_serial[jj][pp][qq].x), sizeof(float), 1, f);
 				if (return_size != 1)
 				{
 					QMessageBox::warning(this, tr("Save Result File"), tr("Save Failed!"), QMessageBox::Ok, QMessageBox::Ok);
 					fclose(f);
 					return;
 				}
-				return_size = fwrite(&(Result_contours_serial[jj][pp][qq].y), sizeof(int), 1, f);
+				return_size = fwrite(&(Result_contours_serial[jj][pp][qq].y), sizeof(float), 1, f);
 				if (return_size != 1)
 				{
 					QMessageBox::warning(this, tr("Save Result File"), tr("Save Failed!"), QMessageBox::Ok, QMessageBox::Ok);
@@ -7502,6 +7469,7 @@ optimize_SFM_incremental_thread::optimize_SFM_incremental_thread(std::vector<std
 	, std::vector<std::vector<cv::Point2d>> Re_project_Map
 	, double* camK, double* camDK, double* camDP, double* camDT
 	, ceres::Solver::Summary* summary
+	, ceres::Solver::Summary* summary_AG
 	, unsigned int max_iter_num
 	, double stop_value
 	, unsigned int num_threads
@@ -7518,7 +7486,7 @@ optimize_SFM_incremental_thread::optimize_SFM_incremental_thread(std::vector<std
 	, bool Use_same_F
 	, double* F_range
 	, double* C_range
-	, bool is_part)
+	, double out_th)
 {
 	code_circle_serial_thread = code_circle_serial;
 	point_clouds_thread = point_clouds;
@@ -7530,6 +7498,7 @@ optimize_SFM_incremental_thread::optimize_SFM_incremental_thread(std::vector<std
 	camDP_thread = camDP;
 	camDT_thread = camDT;
 	summary_thread = summary;
+	summary_thread_AG = summary_AG;
 	max_iter_num_thread = max_iter_num;
 	stop_value_thread = stop_value;
 	num_threads_thread = num_threads;
@@ -7546,71 +7515,46 @@ optimize_SFM_incremental_thread::optimize_SFM_incremental_thread(std::vector<std
 	F_range_thread = F_range;
 	C_range_thread = C_range;
 	Fixed_all_trhead = Fixed_all;
-	is_part_thread = is_part;
+	out_th_thread = out_th;
 }
 
 
 void optimize_SFM_incremental_thread::run()
 {
-	//SBSBSB
-	if (is_part_thread)
-	{
-		SFM_optimize::calculate_SFM_part(code_circle_serial_thread,
-			point_clouds_thread,
-			camQvec_thread, camTvec_thread
-			, Re_project_Map_thread
-			, camK_thread, camDK_thread, camDP_thread, camDT_thread
-			, summary_thread
-			, max_iter_num_thread
-			, stop_value_thread
-			, num_threads_thread
-			, timeout_thread
-			, Loss_type_thread
-			, Loss_value_thread
-			, Dis_K_num_thread
-			, Dis_P_num_thread
-			, Dis_T_num_thread
-			, Fixed_all_trhead
-			, Use_F_thread
-			, Use_Cx_Cy_thread
-			, Use_shear_thread
-			, Use_same_F_thread
-			, F_range_thread
-			, C_range_thread);
-	}
-	else
-	{
-		SFM_optimize::calculate_SFM(code_circle_serial_thread,
-			point_clouds_thread,
-			camQvec_thread, camTvec_thread
-			, Re_project_Map_thread
-			, camK_thread, camDK_thread, camDP_thread, camDT_thread
-			, summary_thread
-			, max_iter_num_thread
-			, stop_value_thread
-			, num_threads_thread
-			, timeout_thread
-			, Loss_type_thread
-			, Loss_value_thread
-			, Dis_K_num_thread
-			, Dis_P_num_thread
-			, Dis_T_num_thread
-			, Fixed_all_trhead
-			, Use_F_thread
-			, Use_Cx_Cy_thread
-			, Use_shear_thread
-			, Use_same_F_thread
-			, F_range_thread
-			, C_range_thread);
-	}
+	
+	SFM_optimize::calculate_SFM(code_circle_serial_thread,
+		point_clouds_thread,
+		camQvec_thread, camTvec_thread
+		, Re_project_Map_thread
+		, camK_thread, camDK_thread, camDP_thread, camDT_thread
+		, summary_thread
+		, summary_thread_AG
+		, max_iter_num_thread
+		, stop_value_thread
+		, num_threads_thread
+		, timeout_thread
+		, Loss_type_thread
+		, Loss_value_thread
+		, Dis_K_num_thread
+		, Dis_P_num_thread
+		, Dis_T_num_thread
+		, Fixed_all_trhead
+		, Use_F_thread
+		, Use_Cx_Cy_thread
+		, Use_shear_thread
+		, Use_same_F_thread
+		, F_range_thread
+		, C_range_thread
+		, out_th_thread);
 	is_finish = true;
 }
 
-calculate_circle_thread::calculate_circle_thread(std::vector<sfm_3d_group> point_cloudss, std::vector<std::vector<std::vector<cv::Point>>> contour_circle_serials,
+calculate_circle_thread::calculate_circle_thread(std::vector<sfm_3d_group> point_cloudss, 
+	std::vector<std::vector<std::vector<cv::Point2f>>> contour_circle_serials,
 	std::vector<std::vector<Coded_detect_inf>> code_circle_serials, std::vector<Eigen::Vector3d> ori_serials,
 	std::vector<Eigen::Quaterniond> camQvecs, std::vector<Eigen::Vector3d> camTvecs
 	, double* camKs, double* camDKs, double* camDPs, double* camDTs
-	, ceres::Solver::Summary* summarys
+	, std::vector<ceres::Solver::Summary>* summarys
 	, unsigned int max_iter_nums
 	, double stop_values
 	, unsigned int num_threadss
@@ -7656,7 +7600,7 @@ void calculate_circle_thread::run()
 update_coded_circle_pixel_thread::update_coded_circle_pixel_thread(Eigen::Matrix<double, 3, 4> Camera_K
 	, Eigen::Matrix<double, 3, 3> Camera_R
 	, Eigen::Vector3d Camera_T, std::vector<Coded_detect_inf> key_points
-	, std::vector<Eigen::Vector3d> ori_vec, std::vector<sfm_3d_group> point_3d, std::vector<std::vector<cv::Point>> contour,
+	, std::vector<Eigen::Vector3d> ori_vec, std::vector<sfm_3d_group> point_3d, std::vector<std::vector<cv::Point2f>> contour,
 	QString image_path,
 	float ratio_k, float ratio_k1, float ratio_k2,
 	float min_radius, float max_radius, float ellipse_error_pixel,
@@ -7735,6 +7679,7 @@ void update_coded_circle_pixel_thread::run()
 		max_x = key_points_thread[jj].x + muli_cof * ratio_k2_thread * (-key_points_thread[jj].x + max_x);
 		min_y = key_points_thread[jj].y - muli_cof * ratio_k2_thread * (key_points_thread[jj].y - min_y);
 		max_y = key_points_thread[jj].y + muli_cof * ratio_k2_thread * (-key_points_thread[jj].y + max_y);
+
 		min_x = floor(min_x);
 		min_y = floor(min_y);
 		max_x = ceil(max_x);
@@ -7743,10 +7688,7 @@ void update_coded_circle_pixel_thread::run()
 		min_y = min_y < 0 ? 0 : min_y;
 		max_x = max_x >= image_now.cols ? (image_now.cols - 1) : max_x;
 		max_y = max_y >= image_now.rows ? (image_now.rows - 1) : max_y;
-		cv::Mat Circle_image_Old = image_now(cv::Range(min_y, max_y), cv::Range(min_x, max_x));
 
-		int window_R_new = ceil(muli_cof * ((max_y - min_y) > (max_x - min_x) ? (max_y - min_y) : (max_x - min_x)) / 2.0);
-		//Eigen::MatrixXd new_ori_temp = camQvec[ii].toRotationMatrix() * Result_Ori[ii].matrix();
 		Eigen::MatrixXd new_ori_temp = ori_vec_thread[find_sfm_flag].matrix();
 		Eigen::Vector3d new_ori(new_ori_temp(0, 0), new_ori_temp(1, 0), new_ori_temp(2, 0));
 		Eigen::Vector3d cros_i(1, 0, 0);
@@ -7760,76 +7702,82 @@ void update_coded_circle_pixel_thread::run()
 		cros_b = new_ori.cross(cros_a);
 		cros_a.normalize();
 		cros_b.normalize();
-
+		//muli_cof = 1.0 / 3.0;
 		Eigen::MatrixXd new_sfm_xyz = Eigen::Vector3d(point_3d_thread[find_sfm_flag].x, point_3d_thread[find_sfm_flag].y, point_3d_thread[find_sfm_flag].z).matrix();
 		Eigen::Vector4d old_point_1_4d(new_sfm_xyz(0, 0) + muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_a(0),
-			new_sfm_xyz(1, 0) + muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_a(1), new_sfm_xyz(2, 0) + muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_a(2), 1);
+			new_sfm_xyz(1, 0) + muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_a(1), 
+			new_sfm_xyz(2, 0) + muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_a(2), 1);
 		Eigen::Vector4d old_point_2_4d(new_sfm_xyz(0, 0) + muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_b(0),
-			new_sfm_xyz(1, 0) + muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_b(1), new_sfm_xyz(2, 0) + muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_b(2), 1);
+			new_sfm_xyz(1, 0) + muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_b(1), 
+			new_sfm_xyz(2, 0) + muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_b(2), 1);
 		Eigen::Vector4d old_point_3_4d(new_sfm_xyz(0, 0) - muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_a(0),
-			new_sfm_xyz(1, 0) - muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_a(1), new_sfm_xyz(2, 0) - muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_a(2), 1);
+			new_sfm_xyz(1, 0) - muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_a(1), 
+			new_sfm_xyz(2, 0) - muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_a(2), 1);
 		Eigen::Vector4d old_point_4_4d(new_sfm_xyz(0, 0) - muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_b(0),
-			new_sfm_xyz(1, 0) - muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_b(1), new_sfm_xyz(2, 0) - muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_b(2), 1);
+			new_sfm_xyz(1, 0) - muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_b(1), 
+			new_sfm_xyz(2, 0) - muli_cof * ratio_k2_thread * point_3d_thread[find_sfm_flag].R * cros_b(2), 1);
 
 		Eigen::Vector3d old_point_1_3d = Camera_K_thread * old_point_1_4d.matrix();
 		Eigen::Vector3d old_point_2_3d = Camera_K_thread * old_point_2_4d.matrix();
 		Eigen::Vector3d old_point_3_3d = Camera_K_thread * old_point_3_4d.matrix();
 		Eigen::Vector3d old_point_4_3d = Camera_K_thread * old_point_4_4d.matrix();
-		cv::Point2f old_point_1(old_point_1_3d.x() / old_point_1_3d.z() - min_x, old_point_1_3d.y() / old_point_1_3d.z() - min_y);
-		cv::Point2f old_point_2(old_point_2_3d.x() / old_point_2_3d.z() - min_x, old_point_2_3d.y() / old_point_2_3d.z() - min_y);
-		cv::Point2f old_point_3(old_point_3_3d.x() / old_point_3_3d.z() - min_x, old_point_3_3d.y() / old_point_3_3d.z() - min_y);
-		cv::Point2f old_point_4(old_point_4_3d.x() / old_point_4_3d.z() - min_x, old_point_4_3d.y() / old_point_4_3d.z() - min_y);
+
+		cv::Point2f old_point_1_ori(old_point_1_3d.x() / old_point_1_3d.z(), old_point_1_3d.y() / old_point_1_3d.z());
+		cv::Point2f old_point_2_ori(old_point_2_3d.x() / old_point_2_3d.z(), old_point_2_3d.y() / old_point_2_3d.z());
+		cv::Point2f old_point_3_ori(old_point_3_3d.x() / old_point_3_3d.z(), old_point_3_3d.y() / old_point_3_3d.z());
+		cv::Point2f old_point_4_ori(old_point_4_3d.x() / old_point_4_3d.z(), old_point_4_3d.y() / old_point_4_3d.z());
+
+		int window_R_new =  ceil(muli_cof * ((max_y - min_y) > (max_x - min_x) ? (max_y - min_y) : (max_x - min_x)) / 2.0);
+		//Eigen::MatrixXd new_ori_temp = camQvec[ii].toRotationMatrix() * Result_Ori[ii].matrix();
 		cv::Point2f new_point_1(window_R_new, 0);
 		cv::Point2f new_point_2(0, window_R_new);
 		cv::Point2f new_point_3(window_R_new, 2 * window_R_new);
 		cv::Point2f new_point_4(2 * window_R_new, window_R_new);
 
-		cv::Point2f AffinePointsSrc[4] = { old_point_1, old_point_2, old_point_3, old_point_4 };
+		cv::Point2f AffinePointsSrc[4] = { old_point_1_ori, old_point_2_ori, old_point_3_ori, old_point_4_ori };
 		cv::Point2f AffinePointsDst[4] = { new_point_1, new_point_2, new_point_3, new_point_4 };
-		cv::Mat Circle_image_New;
 		cv::Mat per_tf = cv::getPerspectiveTransform(AffinePointsSrc, AffinePointsDst);
-		cv::warpPerspective(Circle_image_Old, Circle_image_New, per_tf, cv::Size(2 * window_R_new + 1, 2 * window_R_new + 1), CV_INTER_AREA);
-
-		cv::Mat code_point_temp;
-	    std::vector<std::vector<cv::Point>> pixels;
-		ImageDetectMethod::detectcodecircle(Circle_image_New, code_point_temp, pixels, ratio_k_thread,
-			ratio_k1_thread, ratio_k2_thread,
-			2, window_R_new * 2 + 1,
-			ellipse_error_pixel_thread, color_type_thread, code_bites_type_thread,
-			image_process_method_thread, subpixel_pos_method_thread, max_aspect_ratio_thread
-			, min_points_thread, min_contour_num_thread
-			, delta_Mt_thread
-			, fore_stdDev_thread, back_stdDev_thread);
-		bool can_be_ex = false;
-		for (unsigned int gg = 0; gg < code_point_temp.rows; gg++)
+		cv::Mat per_tf_inv = cv::getPerspectiveTransform(AffinePointsDst, AffinePointsSrc);
+		std::vector<cv::Point2f> con_new;
+		for (int gg = 0; gg < contour_thread[jj].size(); gg++)
 		{
-			//if (code_point_temp.at<float>(gg, 0) == 9)
-			//{
-			//	cv::namedWindow("Old", cv::WINDOW_NORMAL);
-			//	cv::imshow("Old", Circle_image_Old);
-			//	cv::namedWindow("New", cv::WINDOW_NORMAL);
-			//	cv::imshow("New", Circle_image_New);
-			//	cv::waitKey(0);
-			//}
-			if (code_point_temp.at<float>(gg, 0) == key_points_thread[jj].code_num)
-			{
-				std::cout << code_point_temp.at<float>(gg, 0) << "\t" << key_points_thread[jj].r_a << "\t" << key_points_thread[jj].r_b << "\t" << code_point_temp.at<float>(gg, 4) << "\t" << code_point_temp.at<float>(gg, 5) << std::endl;
-				can_be_ex = true;
-				cv::Mat_<double> mat_pt(3, 1);
-				mat_pt(0, 0) = code_point_temp.at<float>(gg, 1);
-				mat_pt(1, 0) = code_point_temp.at<float>(gg, 2);
-				mat_pt(2, 0) = 1;
-				cv::Mat mat_pt_view = per_tf.inv() * mat_pt;
-				double a1 = mat_pt_view.at<double>(0, 0);
-				double a2 = mat_pt_view.at<double>(1, 0);
-				double a3 = mat_pt_view.at<double>(2, 0);
-				double new_x = a1 * 1.0 / a3 + min_x;
-				double new_y = a2 * 1.0 / a3 + min_y;
-				key_points_thread[jj].x = new_x;
-				key_points_thread[jj].y = new_y;
-				break;
-			}
+			cv::Mat_<double> mat_pt(3, 1);
+			mat_pt(0, 0) = contour_thread[jj][gg].x;
+			mat_pt(1, 0) = contour_thread[jj][gg].y;
+			mat_pt(2, 0) = 1;
+			cv::Mat mat_pt_view = per_tf * mat_pt;
+			double a1 = mat_pt_view.at<double>(0, 0);
+			double a2 = mat_pt_view.at<double>(1, 0);
+			double a3 = mat_pt_view.at<double>(2, 0);
+			con_new.push_back(cv::Point2f(a1 / a3, a2 / a3));
 		}
+		cv::RotatedRect rRect = fitEllipseAMS(con_new);
+		if (isnan(rRect.center.x) || isinf(rRect.center.x))
+		{
+			continue;
+		}
+		if (isnan(rRect.center.y) || isinf(rRect.center.y))
+		{
+			continue;
+		}
+		if (isnan(rRect.size.width) || isinf(rRect.size.width))
+		{
+			continue;
+		}
+		if (isnan(rRect.size.height) || isinf(rRect.size.height))
+		{
+			continue;
+		}
+		cv::Mat_<double> mat_pt_inv(3, 1);
+		mat_pt_inv(0, 0) = rRect.center.x;
+		mat_pt_inv(1, 0) = rRect.center.y;
+		mat_pt_inv(2, 0) = 1;
+		cv::Mat mat_pt_view = per_tf_inv * mat_pt_inv;
+		double a1 = mat_pt_view.at<double>(0, 0);
+		double a2 = mat_pt_view.at<double>(1, 0);
+		double a3 = mat_pt_view.at<double>(2, 0);
+		key_points_thread[jj].x = a1 / a3;
+		key_points_thread[jj].y = a2 / a3;
 	}
 	is_finish = true;
 }

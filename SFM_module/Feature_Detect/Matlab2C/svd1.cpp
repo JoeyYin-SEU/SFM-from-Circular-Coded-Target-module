@@ -5,7 +5,7 @@
 // File: svd1.cpp
 //
 // MATLAB Coder version            : 5.5
-// C/C++ source code generated on  : 27-Nov-2023 10:57:33
+// C/C++ source code generated on  : 19-Dec-2023 13:39:53
 //
 
 // Include Files
@@ -17,6 +17,8 @@
 #include "xrot.h"
 #include "xrotg.h"
 #include "xswap.h"
+#include "coder_array.h"
+#include "omp.h"
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -57,28 +59,29 @@ void b_svd(const double A[841], double U[841], double s[29], double V[841])
   for (int q{0}; q < 28; q++) {
     boolean_T apply_transform;
     qp1 = q + 2;
-    qq = (q + 29 * q) + 1;
+    qp1jj = q + 29 * q;
+    qq = qp1jj + 1;
     apply_transform = false;
-    nrm = blas::xnrm2(29 - q, b_A, qq);
+    nrm = blas::xnrm2(29 - q, b_A, qp1jj + 1);
     if (nrm > 0.0) {
       apply_transform = true;
-      if (b_A[qq - 1] < 0.0) {
+      if (b_A[qp1jj] < 0.0) {
         nrm = -nrm;
       }
       s[q] = nrm;
       if (std::abs(nrm) >= 1.0020841800044864E-292) {
         nrm = 1.0 / nrm;
-        qp1jj = (qq - q) + 28;
-        for (int k{qq}; k <= qp1jj; k++) {
+        qjj = (qp1jj - q) + 29;
+        for (int k{qq}; k <= qjj; k++) {
           b_A[k - 1] *= nrm;
         }
       } else {
-        qp1jj = (qq - q) + 28;
-        for (int k{qq}; k <= qp1jj; k++) {
+        qjj = (qp1jj - q) + 29;
+        for (int k{qq}; k <= qjj; k++) {
           b_A[k - 1] /= s[q];
         }
       }
-      b_A[qq - 1]++;
+      b_A[qp1jj]++;
       s[q] = -s[q];
     } else {
       s[q] = 0.0;
@@ -88,8 +91,8 @@ void b_svd(const double A[841], double U[841], double s[29], double V[841])
       if (apply_transform) {
         blas::xaxpy(
             29 - q,
-            -(blas::xdotc(29 - q, b_A, qq, b_A, qjj + 1) / b_A[q + 29 * q]), qq,
-            b_A, qjj + 1);
+            -(blas::xdotc(29 - q, b_A, qp1jj + 1, b_A, qjj + 1) / b_A[qp1jj]),
+            qp1jj + 1, b_A, qjj + 1);
       }
       e[jj - 1] = b_A[qjj];
     }
@@ -190,9 +193,9 @@ void b_svd(const double A[841], double U[841], double s[29], double V[841])
       if (q + 1 < 29) {
         e[q] /= nrm;
       }
-      qjj = 29 * q;
-      qp1jj = qjj + 29;
-      for (int k{qjj + 1}; k <= qp1jj; k++) {
+      qp1jj = 29 * q;
+      qjj = qp1jj + 29;
+      for (int k{qp1jj + 1}; k <= qjj; k++) {
         U[k - 1] *= nrm;
       }
     }
@@ -203,9 +206,9 @@ void b_svd(const double A[841], double U[841], double s[29], double V[841])
         nrm = rt / nrm;
         e[q] = rt;
         s[q + 1] *= nrm;
-        qjj = 29 * (q + 1);
-        qp1jj = qjj + 29;
-        for (int k{qjj + 1}; k <= qp1jj; k++) {
+        qp1jj = 29 * (q + 1);
+        qjj = qp1jj + 29;
+        for (int k{qp1jj + 1}; k <= qjj; k++) {
           V[k - 1] *= nrm;
         }
       }
@@ -345,9 +348,9 @@ void b_svd(const double A[841], double U[841], double s[29], double V[841])
     default:
       if (s[ii] < 0.0) {
         s[ii] = -s[ii];
-        qjj = 29 * ii;
-        qp1jj = qjj + 29;
-        for (int k{qjj + 1}; k <= qp1jj; k++) {
+        qp1jj = 29 * ii;
+        qjj = qp1jj + 29;
+        for (int k{qp1jj + 1}; k <= qjj; k++) {
           V[k - 1] = -V[k - 1];
         }
       }
@@ -366,6 +369,143 @@ void b_svd(const double A[841], double U[841], double s[29], double V[841])
       break;
     }
   }
+}
+
+//
+// Arguments    : const ::coder::array<double, 1U> &A
+//                ::coder::array<double, 2U> &U
+//                double s_data[]
+//                int *s_size
+//                double *V
+// Return Type  : void
+//
+void b_svd(const ::coder::array<double, 1U> &A, ::coder::array<double, 2U> &U,
+           double s_data[], int *s_size, double *V)
+{
+  array<double, 1U> b_A;
+  double nrm;
+  double t;
+  int i1;
+  int ii;
+  int n;
+  int nct;
+  int nctp1;
+  b_A.set_size(A.size(0));
+  nctp1 = A.size(0);
+  if (static_cast<int>(A.size(0) < 3200)) {
+    for (int i{0}; i < nctp1; i++) {
+      b_A[i] = A[i];
+    }
+  } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+    for (int i = 0; i < nctp1; i++) {
+      b_A[i] = A[i];
+    }
+  }
+  n = A.size(0);
+  nrm = 0.0;
+  U.set_size(A.size(0), A.size(0));
+  nctp1 = A.size(0) * A.size(0);
+  if (static_cast<int>(nctp1 < 3200)) {
+    for (int i{0}; i < nctp1; i++) {
+      U[i] = 0.0;
+    }
+  } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+    for (int i = 0; i < nctp1; i++) {
+      U[i] = 0.0;
+    }
+  }
+  nct = A.size(0) - 1;
+  if (nct > 1) {
+    nct = 1;
+  }
+  nctp1 = nct + 1;
+  i1 = static_cast<unsigned char>(nct);
+  for (int q{0}; q < i1; q++) {
+    if (nct >= 1) {
+      nrm = blas::xnrm2(n, b_A, 1);
+      if (nrm > 0.0) {
+        if (b_A[0] < 0.0) {
+          nrm = -nrm;
+        }
+        if (std::abs(nrm) >= 1.0020841800044864E-292) {
+          t = 1.0 / nrm;
+          for (int k{1}; k <= n; k++) {
+            b_A[k - 1] = t * b_A[k - 1];
+          }
+        } else {
+          for (int k{1}; k <= n; k++) {
+            b_A[k - 1] = b_A[k - 1] / nrm;
+          }
+        }
+        b_A[0] = b_A[0] + 1.0;
+        nrm = -nrm;
+      } else {
+        nrm = 0.0;
+      }
+      for (ii = 1; ii <= n; ii++) {
+        U[ii - 1] = b_A[ii - 1];
+      }
+    }
+  }
+  if (nct < 1) {
+    nrm = b_A[0];
+  }
+  if (nct + 1 <= A.size(0)) {
+    for (int jj{nctp1}; jj <= n; jj++) {
+      for (ii = 0; ii < n; ii++) {
+        U[ii + U.size(0) * (jj - 1)] = 0.0;
+      }
+      U[(jj + U.size(0) * (jj - 1)) - 1] = 1.0;
+    }
+  }
+  for (int q{nct}; q >= 1; q--) {
+    if (nrm != 0.0) {
+      for (int jj{2}; jj <= n; jj++) {
+        nctp1 = n * (jj - 1);
+        t = 0.0;
+        if (n >= 1) {
+          for (int k{0}; k < n; k++) {
+            t += U[k] * U[nctp1 + k];
+          }
+        }
+        t = -(t / U[0]);
+        if ((n >= 1) && (!(t == 0.0))) {
+          i1 = n - 1;
+          for (int k{0}; k <= i1; k++) {
+            ii = nctp1 + k;
+            U[ii] = U[ii] + t * U[k];
+          }
+        }
+      }
+      for (ii = 1; ii <= n; ii++) {
+        U[ii - 1] = -U[ii - 1];
+      }
+      U[0] = U[0] + 1.0;
+    } else {
+      for (ii = 0; ii < n; ii++) {
+        U[ii] = 0.0;
+      }
+      U[0] = 1.0;
+    }
+  }
+  if (nrm != 0.0) {
+    double rt;
+    rt = std::abs(nrm);
+    t = nrm / rt;
+    nrm = rt;
+    for (int k{1}; k <= n; k++) {
+      U[k - 1] = t * U[k - 1];
+    }
+  }
+  *s_size = 1;
+  s_data[0] = nrm;
+  *V = 1.0;
 }
 
 } // namespace internal

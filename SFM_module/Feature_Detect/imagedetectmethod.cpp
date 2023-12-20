@@ -11,12 +11,211 @@ ImageDetectMethod::~ImageDetectMethod()
 }
 
 
+
+inline double ImageDetectMethod::getAmplitude(cv::Mat& dx, cv::Mat& dy, int i, int j)
+{
+	cv::Point2d mag(dx.at<float>(i, j), dy.at<float>(i, j));
+	return norm(mag);
+}
+
+inline void ImageDetectMethod::getMagNeighbourhood(cv::Mat& dx, cv::Mat& dy, cv::Point& p, int w, int h, std::vector<double>& mag)
+{
+	int top = p.y - 1 >= 0 ? p.y - 1 : p.y;
+	int down = p.y + 1 < h ? p.y + 1 : p.y;
+	int left = p.x - 1 >= 0 ? p.x - 1 : p.x;
+	int right = p.x + 1 < w ? p.x + 1 : p.x;
+
+	mag[0] = getAmplitude(dx, dy, top, left);
+	mag[1] = getAmplitude(dx, dy, top, p.x);
+	mag[2] = getAmplitude(dx, dy, top, right);
+	mag[3] = getAmplitude(dx, dy, p.y, left);
+	mag[4] = getAmplitude(dx, dy, p.y, p.x);
+	mag[5] = getAmplitude(dx, dy, p.y, right);
+	mag[6] = getAmplitude(dx, dy, down, left);
+	mag[7] = getAmplitude(dx, dy, down, p.x);
+	mag[8] = getAmplitude(dx, dy, down, right);
+}
+
+inline void ImageDetectMethod::get2ndFacetModelIn3x3(std::vector<double>& mag, std::vector<double>& a)
+{
+	a[0] = (-mag[0] + 2.0 * mag[1] - mag[2] + 2.0 * mag[3] + 5.0 * mag[4] + 2.0 * mag[5] - mag[6] + 2.0 * mag[7] - mag[8]) / 9.0;
+	a[1] = (-mag[0] + mag[2] - mag[3] + mag[5] - mag[6] + mag[8]) / 6.0;
+	a[2] = (mag[6] + mag[7] + mag[8] - mag[0] - mag[1] - mag[2]) / 6.0;
+	a[3] = (mag[0] - 2.0 * mag[1] + mag[2] + mag[3] - 2.0 * mag[4] + mag[5] + mag[6] - 2.0 * mag[7] + mag[8]) / 6.0;
+	a[4] = (-mag[0] + mag[2] + mag[6] - mag[8]) / 4.0;
+	a[5] = (mag[0] + mag[1] + mag[2] - 2.0 * (mag[3] + mag[4] + mag[5]) + mag[6] + mag[7] + mag[8]) / 6.0;
+}
+/*
+   Compute the eigenvalues and eigenvectors of the Hessian matrix given by
+   dfdrr, dfdrc, and dfdcc, and sort them in descending order according to
+   their absolute values.
+*/
+inline void ImageDetectMethod::eigenvals(std::vector<double>& a, double eigval[2], double eigvec[2][2])
+{
+	// derivatives
+	// fx = a[1], fy = a[2]
+	// fxy = a[4]
+	// fxx = 2 * a[3]
+	// fyy = 2 * a[5]
+	double dfdrc = a[4];
+	double dfdcc = a[3] * 2.0;
+	double dfdrr = a[5] * 2.0;
+	double theta, t, c, s, e1, e2, n1, n2; /* , phi; */
+
+	/* Compute the eigenvalues and eigenvectors of the Hessian matrix. */
+	if (dfdrc != 0.0) {
+		theta = 0.5 * (dfdcc - dfdrr) / dfdrc;
+		t = 1.0 / (fabs(theta) + sqrt(theta * theta + 1.0));
+		if (theta < 0.0) t = -t;
+		c = 1.0 / sqrt(t * t + 1.0);
+		s = t * c;
+		e1 = dfdrr - t * dfdrc;
+		e2 = dfdcc + t * dfdrc;
+	}
+	else {
+		c = 1.0;
+		s = 0.0;
+		e1 = dfdrr;
+		e2 = dfdcc;
+	}
+	n1 = c;
+	n2 = -s;
+
+	/* If the absolute value of an eigenvalue is larger than the other, put that
+	eigenvalue into first position.  If both are of equal absolute value, put
+	the negative one first. */
+	if (fabs(e1) > fabs(e2)) {
+		eigval[0] = e1;
+		eigval[1] = e2;
+		eigvec[0][0] = n1;
+		eigvec[0][1] = n2;
+		eigvec[1][0] = -n2;
+		eigvec[1][1] = n1;
+	}
+	else if (fabs(e1) < fabs(e2)) {
+		eigval[0] = e2;
+		eigval[1] = e1;
+		eigvec[0][0] = -n2;
+		eigvec[0][1] = n1;
+		eigvec[1][0] = n1;
+		eigvec[1][1] = n2;
+	}
+	else {
+		if (e1 < e2) {
+			eigval[0] = e1;
+			eigval[1] = e2;
+			eigvec[0][0] = n1;
+			eigvec[0][1] = n2;
+			eigvec[1][0] = -n2;
+			eigvec[1][1] = n1;
+		}
+		else {
+			eigval[0] = e2;
+			eigval[1] = e1;
+			eigvec[0][0] = -n2;
+			eigvec[0][1] = n1;
+			eigvec[1][0] = n1;
+			eigvec[1][1] = n2;
+		}
+	}
+}
+
+inline double ImageDetectMethod::vector2angle(double x, double y)
+{
+	double a = std::atan2(y, x);
+	return a >= 0.0 ? a : a + CV_2PI;
+}
+
+void ImageDetectMethod::extractSubPixPoints(cv::Mat& dx, cv::Mat& dy, std::vector<std::vector<cv::Point> >& contoursInPixel, std::vector<Contour>& contours)
+{
+	int w = dx.cols;
+	int h = dx.rows;
+	contours.resize(contoursInPixel.size());
+	for (size_t i = 0; i < contoursInPixel.size(); ++i)
+	{
+		std::vector<cv::Point>& icontour = contoursInPixel[i];
+		Contour& contour = contours[i];
+		contour.points.resize(icontour.size());
+		contour.response.resize(icontour.size());
+		contour.direction.resize(icontour.size());
+#if defined(_OPENMP) && defined(NDEBUG)
+#pragma omp parallel for
+#endif
+		for (int j = 0; j < (int)icontour.size(); ++j)
+		{
+			std::vector<double> magNeighbour(9);
+			getMagNeighbourhood(dx, dy, icontour[j], w, h, magNeighbour);
+			std::vector<double> a(9);
+			get2ndFacetModelIn3x3(magNeighbour, a);
+
+			// Hessian eigen vector 
+			double eigvec[2][2], eigval[2];
+			eigenvals(a, eigval, eigvec);
+			double t = 0.0;
+			double ny = eigvec[0][0];
+			double nx = eigvec[0][1];
+			if (eigval[0] < 0.0)
+			{
+				double rx = a[1], ry = a[2], rxy = a[4], rxx = a[3] * 2.0, ryy = a[5] * 2.0;
+				t = -(rx * nx + ry * ny) / (rxx * nx * nx + 2.0 * rxy * nx * ny + ryy * ny * ny);
+			}
+			double px = nx * t;
+			double py = ny * t;
+			float x = (float)icontour[j].x;
+			float y = (float)icontour[j].y;
+			if (fabs(px) <= 0.5 && fabs(py) <= 0.5)
+			{
+				x += (float)px;
+				y += (float)py;
+			}
+			contour.points[j] = cv::Point2f(x, y);
+			contour.response[j] = (float)(a[0] / 128.0);
+			contour.direction[j] = (float)vector2angle(ny, nx);
+		}
+	}
+}
+
+
+
 bool ImageDetectMethod::ImagePreprocess(const cv::Mat& ori_image_mat, cv::Mat& processed_image_mat)
 {
 	/////////高斯滤波
 	//cv::bilateralFilter(ori_image_mat, processed_image_mat, 9, 50, 25 / 2);
 	GaussianBlur(ori_image_mat, processed_image_mat, cv::Size(5, 5), 1, 1);
 	return true;
+}
+void ImageDetectMethod::Sub_pixel_edge(const cv::Mat image_mat, std::vector<Contour>& Cons,double sigma)
+{
+	cv::Mat threshold_image;
+	std::vector<std::vector<cv::Point>> contours;
+	threshold_image = image_mat.clone();
+	DetectClosedContours(threshold_image, contours, DetectContoursMethod::CANNY_Method);
+	threshold_image = image_mat.clone();
+	if (threshold_image.channels() == 3)
+	{
+		cv::cvtColor(threshold_image, threshold_image, CV_BGR2GRAY);
+	}
+	coder::array<float, 2U> dx,dy;
+	dx.set_size(threshold_image.rows, threshold_image.cols);
+	dy.set_size(threshold_image.rows, threshold_image.cols);
+	coder::array<boolean_T, 2U> b_I;
+	b_I.set_size(threshold_image.rows, threshold_image.cols);
+	for (int idx0{ 0 }; idx0 < b_I.size(0); idx0++) {
+		for (int idx1{ 0 }; idx1 < b_I.size(1); idx1++) {
+			b_I[idx0 + b_I.size(0) * idx1] = threshold_image.at<uchar>(idx0, idx1);
+		}
+	}
+	get_fx_fy(b_I, sigma, dx, dy);
+	cv::Mat dx_image(threshold_image.rows, threshold_image.cols, CV_32FC1);
+	cv::Mat dy_image(threshold_image.rows, threshold_image.cols, CV_32FC1);
+	for (int idx0{ 0 }; idx0 < dx.size(0); idx0++) {
+		for (int idx1{ 0 }; idx1 < dx.size(1); idx1++)
+		{
+			dx_image.at<float>(idx0, idx1) = dx[idx0 + b_I.size(0) * idx1];
+			dy_image.at<float>(idx0, idx1) = dy[idx0 + b_I.size(0) * idx1];
+		}
+	}
+	extractSubPixPoints(dx_image, dy_image, contours, Cons);
 }
 bool ImageDetectMethod::DetectClosedContours(const cv::Mat& ori_image_mat, std::vector<std::vector<cv::Point>>& contours, DetectContoursMethod image_process_method)
 {
@@ -191,12 +390,10 @@ float ImageDetectMethod::Contours_arc(std::vector<cv::Point> C , cv::Point2f cen
 		arc_vec.push_back(atan2f((float)C[ii].x - center.x, (float)C[ii].y - center.y));
 	}
 	std::sort(arc_vec.begin(), arc_vec.end());
-	double arc_max = abs(arc_vec[0] - arc_vec[arc_vec.size() - 1]);
-	arc_max = arc_max < (6.283185307179586 - arc_max) ? arc_max : (6.283185307179586 - arc_max);
+	double arc_max = arc_vec[0] + 6.283185307179586 - arc_vec[arc_vec.size() - 1];
 	for (int ii = 0; ii < C.size() - 1; ii++)
 	{
-		double L_now = abs(arc_vec[ii + 1] - arc_vec[ii]);
-		L_now = L_now < (6.283185307179586 - L_now) ? L_now : (6.283185307179586 - L_now);
+		double L_now = arc_vec[ii + 1] - arc_vec[ii];
 		arc_max = arc_max < L_now ? L_now : arc_max;
 	}
 	return (6.283185307179586 - arc_max) / 6.283185307179586 * 360.0;
@@ -1110,7 +1307,7 @@ bool ImageDetectMethod::FindSubPixelPosOfCircleCenter_opnecv(const cv::Mat& imag
 	float center_x, float center_y, float ellipse_a, float ellipse_b,
 	float angle_in_pi, const std::vector<cv::Point>& contour_points,
 	float& sub_pixel_center_x, float& sub_pixel_center_y,
-	std::vector<cv::Point2f>* subpixel_edge_points /*= NULL*/,
+	std::vector<cv::Point2f>& subpixel_edge_points /*= NULL*/,
 	MarkPointColorType color_type/* = BlackDownWhiteUp*/)
 {
 	float ellipse_a2 = ellipse_a * 1.5;
@@ -1142,49 +1339,119 @@ bool ImageDetectMethod::FindSubPixelPosOfCircleCenter_opnecv(const cv::Mat& imag
 	else j_right = int(center_x + ellipse_b2);
 
 	cv::Mat crop_image = image_mat(cv::Range(i_top, i_bottom), cv::Range(j_left, j_right));
-
+	std::vector<Contour> sub_contours; 
+	Sub_pixel_edge(crop_image, sub_contours);
+	float sub_x_update, sub_y_update;
+	float min_value = 1e20;
+	if (sub_contours.size() == 0)
+	{
+		return false;
+	}
+	for (int ii = 0; ii < sub_contours.size(); ii++)
+	{
+		std::vector<cv::Point2f> con_now;	
+		for (int jj = 0; jj < sub_contours[ii].points.size(); jj++)
+		{
+			con_now.push_back(sub_contours[ii].points[jj]);
+		}
+		if (con_now.size() < 5)
+		{
+			continue;
+		}
+		cv::RotatedRect rRect = fitEllipseAMS(con_now);
+		if (isnan(rRect.center.x) || isinf(rRect.center.x))
+		{
+			continue;
+		}
+		if (isnan(rRect.center.y) || isinf(rRect.center.y))
+		{
+			continue;
+		}
+		if (isnan(rRect.size.width) || isinf(rRect.size.width))
+		{
+			continue;
+		}
+		if (isnan(rRect.size.height) || isinf(rRect.size.height))
+		{
+			continue;
+		}
+		if (abs((float)i_top + rRect.center.y - center_y) + abs((float)j_left + rRect.center.x - center_x) < min_value)
+		{
+			subpixel_edge_points.clear();
+			for (int ss = 0; ss < sub_contours[ii].points.size(); ss++)
+			{
+				subpixel_edge_points.push_back(cv::Point2f(sub_contours[ii].points[ss].x + (float)j_left
+					, sub_contours[ii].points[ss].y + (float)i_top));
+			}
+			min_value = abs((float)i_top + rRect.center.y - center_y) + abs((float)j_left + rRect.center.x - center_x);
+			sub_x_update = rRect.center.x;
+			sub_y_update = rRect.center.y;
+		}
+	}
+	sub_pixel_center_y = (float)i_top + sub_y_update;
+	sub_pixel_center_x = (float)j_left + sub_x_update;
+	return true;
 	//cv::namedWindow("canny", cv::WINDOW_FREERATIO);
 	//imshow("canny", crop_image);
 	////imwrite("E:\\canny.bmp",show_contours_image);
 	//cv::waitKey(0);
 
-	cv::SimpleBlobDetector::Params params;
-	params.minThreshold = 15;
-	params.maxThreshold = 240;
-	params.thresholdStep = 5;
-	cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
-	params.filterByArea = true;
-	params.maxArea = 3.1415 * ellipse_a * ellipse_b / 2.0 / 2.0 * 4.0;
-	params.minArea = 3.1415 * ellipse_a * ellipse_b /2.0 / 2.0 / 4.0;
-	params.blobColor = 0;
-	std::vector<cv::KeyPoint> keypoints;
-	detector->detect(crop_image, keypoints);
-	if (keypoints.size() == 0)
-	{
-		return false;
-	}
-	else
-	{
-		int min_index = 0;
-		float min_value = 1e20;
-		for (int ii = 0; ii < keypoints.size(); ii++)
-		{
-			if (abs((float)i_top + keypoints[ii].pt.x - center_y) + abs((float)j_left + keypoints[ii].pt.y - center_x) < min_value)
-			{
-				min_value = abs((float)i_top + keypoints[ii].pt.x - center_y) + abs((float)j_left + keypoints[ii].pt.y - center_x);
-				min_index = ii;
-			}
-		}
-		sub_pixel_center_y = (float)i_top + keypoints[min_index].pt.y;
-		sub_pixel_center_x = (float)j_left + keypoints[min_index].pt.x;
-	}
+	//cv::SimpleBlobDetector::Params params_white;
+	//params_white.blobColor = 255;
+	//params_white.filterByCircularity = false;
+	//params_white.filterByConvexity = false;
+	//params_white.filterByInertia = false;
+	//params_white.filterByArea = true;
+	//params_white.maxArea = 3.1415 * ellipse_a * ellipse_b * 4.0;
+	//params_white.minArea = 3.1415 * ellipse_a * ellipse_b / 4.0;
+	//cv::Ptr<cv::SimpleBlobDetector> detector_white = cv::SimpleBlobDetector::create(params_white);
+	//cv::SimpleBlobDetector::Params params_black;
+	//params_black.blobColor = 0;
+	//params_black.filterByCircularity = false;
+	//params_black.filterByConvexity = false;
+	//params_black.filterByInertia = false;
+	//params_black.filterByArea = true;
+	//params_black.maxArea = 3.1415 * ellipse_a * ellipse_b * 4.0;
+	//params_black.minArea = 3.1415 * ellipse_a * ellipse_b / 4.0;
+	//cv::Ptr<cv::SimpleBlobDetector> detector_black = cv::SimpleBlobDetector::create(params_black);
+	////params.blobColor = 0;
+	//std::vector<cv::KeyPoint> keypoints_all;
+	//std::vector<cv::KeyPoint> keypoints_white;
+	//std::vector<cv::KeyPoint> keypoints_black;
+	//detector_white->detect(crop_image, keypoints_white);
+	//detector_black->detect(crop_image, keypoints_black);
+	//for (int ii = 0; ii < keypoints_black.size(); ii++)
+	//{
+	//	keypoints_all.push_back(keypoints_black[ii]);
+	//}
+	//for (int ii = 0; ii < keypoints_white.size(); ii++)
+	//{
+	//	keypoints_all.push_back(keypoints_white[ii]);
+	//}
+	//if (keypoints_all.size() == 0)
+	//{
+	//	return false;
+	//}
+	//else
+	//{
+	//	int min_index = 0;
+	//	float min_value = 1e20;
+	//	for (int ii = 0; ii < keypoints_all.size(); ii++)
+	//	{
+	//		if (abs((float)i_top + keypoints_all[ii].pt.x - center_y) + abs((float)j_left + keypoints_all[ii].pt.y - center_x) < min_value)
+	//		{
+	//			min_value = abs((float)i_top + keypoints_all[ii].pt.y - center_y) + abs((float)j_left + keypoints_all[ii].pt.x - center_x);
+	//			min_index = ii;
+	//		}
+	//	}
+	//	sub_pixel_center_y = (float)i_top + keypoints_all[min_index].pt.y;
+	//	sub_pixel_center_x = (float)j_left + keypoints_all[min_index].pt.x;
+	//}
 	//if (color_type == BlackDownWhiteUp || color_type == Uncertainty)
 	//{
 
 	//}
 
-
-	return true;
 }
 
 
@@ -1377,6 +1644,7 @@ bool ImageDetectMethod::FindCircleGrid(cv::Mat ori_image, int h_num, int v_num,
 
 	int useful_corner_num_max = 0;
 	std::vector<cv::Point2f> corners_max;
+	std::vector<std::vector<cv::Point2f>> edge_points_max;
 	cv::Mat processed_image_mat;
 	std::vector<std::vector<cv::Point>> contours;
 	QList<QList<float>> ellipse_pars;
@@ -1435,54 +1703,6 @@ bool ImageDetectMethod::FindCircleGrid(cv::Mat ori_image, int h_num, int v_num,
 		points_temp.push_back(cv::Point2f(ellipse_pars[ii][0], ellipse_pars[ii][1]));
 	}
 
-	//cv::CirclesGridFinderParameters parameters;
-	//parameters.gridType = cv::CirclesGridFinderParameters::SYMMETRIC_GRID;
-	//CirclesGridClusterFinder circlesGridClusterFinder(parameters);
-	//circlesGridClusterFinder.findGrid(points_temp, cv::Size(h_num,v_num), corners);
-	//useful_corner_num = corners.size();
-	//if (useful_corner_num != h_num * v_num)
-	//{
-	//	bool isValid = false;
-	//	const int attempts = 5000;
-	//	const size_t minHomographyPoints = 4;
-	//	cv::Mat H;
-	//	for (int i = 0; i < attempts; i++)
-	//	{
-	//		corners.clear();
-	//		CirclesGridFinder boxFinder(cv::Size(h_num, v_num), points_temp, parameters);
-	//		try
-	//		{
-	//			bool isFound = boxFinder.findHoles();
-	//			if (isFound)
-	//			{
-	//				boxFinder.getHoles(corners);
-	//				isValid = true;
-	//				break;  // done, return result
-	//			}
-	//		}
-	//		catch (const cv::Exception& e)
-	//		{
-	//			CV_UNUSED(e);
-	//			// nothing, next attempt
-	//		}
-
-	//		boxFinder.getHoles(corners);
-	//		if (i != attempts - 1)
-	//		{
-	//			if (corners.size() < minHomographyPoints)
-	//				break;
-	//			H = CirclesGridFinder::rectifyGrid(boxFinder.getDetectedGridSize(), corners, points_temp, points_temp);
-	//		}
-	//	}
-
-	//	if (!corners.empty() && !H.empty())  // undone rectification
-	//	{
-	//		cv::Mat orgPointsMat;
-	//		transform(corners, orgPointsMat, H.inv());
-	//		convertPointsFromHomogeneous(orgPointsMat, corners);
-	//		useful_corner_num = corners.size();
-	//	}
-	//}
 	if (ellipse_pars_ori.size() > 50)
 	{
 		return false;
@@ -1614,90 +1834,11 @@ bool ImageDetectMethod::FindCircleGrid(cv::Mat ori_image, int h_num, int v_num,
 						line_Y_points_length.push_back(L2ori);
 					}
 				}
-				////Approximately 1st re_calcu
-				//std::vector<float> line_X_points_length_copy = line_X_points_length;
-				//std::vector<float> line_Y_points_length_copy = line_Y_points_length;
-				//std::sort(line_X_points_length.begin(), line_X_points_length.end());
-				//std::sort(line_Y_points_length.begin(), line_Y_points_length.end());
-				//std::vector<float> line_X_points_delta;
-				//std::vector<float> line_Y_points_delta;
-				//std::vector<float> line_X_points_delta2;
-				//std::vector<float> line_Y_points_delta2;
-				//std::vector<int> line_X_points_new_index;
-				//line_X_points_new_index.resize(line_X_points_length_copy.size());
-				//std::vector<int> line_Y_points_new_index;
-				//line_Y_points_new_index.resize(line_Y_points_length_copy.size());
-				//for (int ii = 0; ii < line_X_points_length_copy.size(); ii++)
-				//{
-				//	int cur_index = 0;
-				//	for (int jj = 0; jj < line_X_points_length_copy.size(); jj++)
-				//	{
-				//		if (line_X_points_length[ii] == line_X_points_length_copy[jj])
-				//		{
-				//			cur_index = jj;
-				//			break;
-				//		}
-				//	}
-				//	line_X_points_new_index[ii] = cur_index;
-				//}
-				//for (int ii = 0; ii < line_Y_points_length_copy.size(); ii++)
-				//{
-				//	int cur_index = 0;
-				//	for (int jj = 0; jj < line_Y_points_length_copy.size(); jj++)
-				//	{
-				//		if (line_Y_points_length[ii] == line_Y_points_length_copy[jj])
-				//		{
-				//			cur_index = jj;
-				//			break;
-				//		}
-				//	}
-				//	line_Y_points_new_index[ii] = cur_index;
-				//}
-				//line_X_points_delta.push_back(line_X_points_length[line_X_points_new_index[0]]);
-				//for (int ii = 1; ii < line_X_points_length_copy.size(); ii++)
-				//{
-				//	line_X_points_delta.push_back(line_X_points_length[line_X_points_new_index[ii]] - line_X_points_length[line_X_points_new_index[ii - 1]]);
-				//}
-				//line_X_points_delta.push_back(sqrt(pow(X_axis_point.x - line_X_points[line_X_points_new_index[line_X_points_new_index.size() - 1]].x, 2) 
-				//	+ pow(X_axis_point.y - line_X_points[line_X_points_new_index[line_X_points_new_index.size() - 1]].y, 2)));
-				//line_Y_points_delta.push_back(line_Y_points_length[line_Y_points_new_index[0]]);
-				//for (int ii = 1; ii < line_Y_points_length_copy.size(); ii++)
-				//{
-				//	line_Y_points_delta.push_back(line_Y_points_length[line_Y_points_new_index[ii]] - line_Y_points_length[line_Y_points_new_index[ii - 1]]);
-				//}
-				//line_Y_points_delta.push_back(sqrt(pow(Y_axis_point.x - line_Y_points[line_Y_points_new_index[line_Y_points_new_index.size() - 1]].x, 2)
-				//	+ pow(Y_axis_point.y - line_Y_points[line_Y_points_new_index[line_Y_points_new_index.size() - 1]].y, 2)));
-
-				//for (int ii = 1; ii < line_X_points_delta.size(); ii++)
-				//{
-				//	line_X_points_delta2.push_back(line_X_points_delta[ii] - line_X_points_delta[ii - 1]);
-				//}
-				//for (int ii = 1; ii < line_Y_points_delta.size(); ii++)
-				//{
-				//	line_Y_points_delta2.push_back(line_Y_points_delta[ii] - line_Y_points_delta[ii - 1]);
-				//}
-				//size_t n = line_X_points_delta2.size() / 2;
-				//std::nth_element(line_X_points_delta2.begin(), line_X_points_delta2.begin() + n, line_X_points_delta2.end());
-				//float X_delta = line_X_points_delta2[n];
-				//n = line_Y_points_delta2.size() / 2;
-				//std::nth_element(line_Y_points_delta2.begin(), line_Y_points_delta2.begin() + n, line_Y_points_delta2.end());
-				//float Y_delta = line_Y_points_delta2[n];
-
-				//n = line_X_points_delta.size() / 2;
-				//std::nth_element(line_X_points_delta.begin(), line_X_points_delta.begin() + n, line_X_points_delta.end());
-				//float X_Ldelta = line_X_points_delta[n];
-				//n = line_Y_points_delta.size() / 2;
-				//std::nth_element(line_Y_points_delta.begin(), line_Y_points_delta.begin() + n, line_Y_points_delta.end());
-				//float Y_Ldelta = line_Y_points_delta[n];
-
-				//std::vector<int> can_pass_X;
-				//for (int ii = 1; ii < line_X_points_delta.size(); ii++)
-				//{
-
-				//}
 				corners.clear();
 				sign_list.clear();
 				corners.resize(h_num * v_num);
+				edge_points.clear();
+				edge_points.resize(h_num * v_num);
 				for (int sc = 0; sc < h_num * v_num; sc++)
 				{
 					corners[sc].x = 0;
@@ -1779,10 +1920,6 @@ bool ImageDetectMethod::FindCircleGrid(cv::Mat ori_image, int h_num, int v_num,
 					}
 					for (int n = 0; n < ellipse_pars.size(); n++)
 					{
-						//if (sqrt(ellipse_pars[n][2] * ellipse_pars[n][2]) / 2.0 < mean_ab * 0.5 || sqrt(ellipse_pars[n][2] * ellipse_pars[n][2]) / 2.0 > mean_ab * 2)
-						//{
-						//	continue;
-						//}
 						cv::Mat X = cv::Mat(3, 1, CV_32F);
 						X.at<float>(0, 0) = ellipse_pars[n][0];
 						X.at<float>(1, 0) = ellipse_pars[n][1];
@@ -1811,15 +1948,23 @@ bool ImageDetectMethod::FindCircleGrid(cv::Mat ori_image, int h_num, int v_num,
 							std::vector<cv::Point2f> edge_contour;
 							if (FindSubPixelPosOfCircleCenter_opnecv(processed_image_mat, ellipse_pars[n][0], ellipse_pars[n][1], ellipse_pars[n][2],
 								ellipse_pars[n][3], ellipse_pars[n][4], contours_copy[ellipse_pars[n][6]], sub_pixel_x, sub_pixel_y,
-								&edge_contour, Uncertainty))
+								edge_contour, Uncertainty))
 							{
 								ellipse_pars[n][0] = sub_pixel_x;
 								ellipse_pars[n][1] = sub_pixel_y;
+
+								edge_points[(i - 1) * h_num + j - 1] = edge_contour;
 								corners[(i - 1) * h_num + j - 1] = cv::Point2f(sub_pixel_x, sub_pixel_y);
 								sign_list[(i - 1) * h_num + j - 1] = 2;
 							}
 							else
 							{
+								for (int tp = 0; tp < contours_copy[ellipse_pars[n][6]].size(); tp++)
+								{
+									edge_contour.push_back(cv::Point2f(contours_copy[ellipse_pars[n][6]][tp].x,
+										contours_copy[ellipse_pars[n][6]][tp].x));
+								}
+								edge_points[(i - 1) * h_num + j - 1] = edge_contour;
 								corners[(i - 1) * h_num + j - 1] = cv::Point2f(ellipse_pars[n][0], ellipse_pars[n][1]);
 								sign_list[(i - 1) * h_num + j - 1] = 1;
 							}
@@ -1838,15 +1983,22 @@ bool ImageDetectMethod::FindCircleGrid(cv::Mat ori_image, int h_num, int v_num,
 							std::vector<cv::Point2f> edge_contour;
 							if (FindSubPixelPosOfCircleCenter_opnecv(processed_image_mat, ellipse_pars[n][0], ellipse_pars[n][1], ellipse_pars[n][2],
 								ellipse_pars[n][3], ellipse_pars[n][4], contours_copy[ellipse_pars[n][6]], sub_pixel_x, sub_pixel_y,
-								&edge_contour, Uncertainty))
+								edge_contour, Uncertainty))
 							{
 								ellipse_pars[n][0] = sub_pixel_x;
 								ellipse_pars[n][1] = sub_pixel_y;
+								edge_points[(i - 1) * h_num + j - 1] = edge_contour;
 								corners[(i - 1) * h_num + j - 1] = cv::Point2f(sub_pixel_x, sub_pixel_y);
 								sign_list[(i - 1) * h_num + j - 1] = 2;
 							}
 							else
 							{
+								for (int tp = 0; tp < contours_copy[ellipse_pars[n][6]].size(); tp++)
+								{
+									edge_contour.push_back(cv::Point2f(contours_copy[ellipse_pars[n][6]][tp].x,
+										contours_copy[ellipse_pars[n][6]][tp].x));
+								}
+								edge_points[(i - 1) * h_num + j - 1] = edge_contour;
 								corners[(i - 1) * h_num + j - 1] = cv::Point2f(ellipse_pars[n][0], ellipse_pars[n][1]);
 								sign_list[(i - 1) * h_num + j - 1] = 1;
 							}
@@ -1857,18 +2009,26 @@ bool ImageDetectMethod::FindCircleGrid(cv::Mat ori_image, int h_num, int v_num,
 					{
 						useful_corner_num_max = useful_corner_num;
 						corners_max = corners;
+						edge_points_max = edge_points;
 					}
 					if (useful_corner_num == (h_num * v_num))
 					{
-						//cv::Mat II = cv::Mat::zeros(ori_image.size(), CV_8UC3);
-						//cv::cvtColor(ori_image, II, CV_GRAY2BGR);
-						////cv::drawContours(II, contours_copy, -1, cv::Scalar(0, 0, 255), 10);
-						//cv::drawContours(II, contours_for_key, -1, cv::Scalar(0, 255, 0), 5);
-						//cv::namedWindow("cannys", cv::WINDOW_NORMAL);
-						//cv::imshow("cannys", II);
-						//cv::waitKey(0);
 						return true;
 					}
+
+					//std::vector<std::vector<cv::Point>>contours_for_key_C;
+					//for (int pt = 0; pt < contours_for_key.size(); pt++)
+					//{
+					//	if(contours_for_key[pt].size()!=0)
+					//		contours_for_key_C.push_back(contours_for_key[pt]);
+					//}
+					//cv::Mat II = cv::Mat::zeros(ori_image.size(), CV_8UC3);
+					//cv::cvtColor(ori_image, II, CV_GRAY2BGR);
+					////cv::drawContours(II, contours_copy, -1, cv::Scalar(0, 0, 255), 10);
+					//cv::drawContours(II, contours_for_key_C, -1, cv::Scalar(0, 255, 0), 5);
+					//cv::namedWindow("cannys", cv::WINDOW_NORMAL);
+					//cv::imshow("cannys", II);
+					//cv::waitKey(0);
 				}
 			}
 		}
@@ -1882,6 +2042,7 @@ bool ImageDetectMethod::FindCircleGrid(cv::Mat ori_image, int h_num, int v_num,
 	{
 		useful_corner_num = useful_corner_num_max;
 		corners = corners_max;
+		edge_points = edge_points_max;
 		return true;
 	}
 	return false;
@@ -2191,7 +2352,7 @@ bool ImageDetectMethod::ImageDetectMethod::detectcodecircle_graysearch(cv::Mat o
 				std::vector<cv::Point2f> edge_contour;
 				if (FindSubPixelPosOfCircleCenter_opnecv(processed_image_mat, ellipse_pars[i][0], ellipse_pars[i][1], ellipse_pars[i][2],
 					ellipse_pars[i][3], ellipse_pars[i][4], contours[ellipse_pars[i][6]], sub_pixel_x, sub_pixel_y,
-					&edge_contour, Uncertainty))
+					edge_contour, Uncertainty))
 				{
 					ellipse_pars[i][0] = sub_pixel_x;
 					ellipse_pars[i][1] = sub_pixel_y;
@@ -2279,7 +2440,7 @@ bool ImageDetectMethod::ImageDetectMethod::detectcodecircle_graysearch(cv::Mat o
 				std::vector<cv::Point2f> edge_contour;
 				if (FindSubPixelPosOfCircleCenter_opnecv(processed_image_mat, ellipse_pars[i][0], ellipse_pars[i][1], ellipse_pars[i][2],
 					ellipse_pars[i][3], ellipse_pars[i][4], contours[ellipse_pars[i][6]], sub_pixel_x, sub_pixel_y,
-					&edge_contour, Uncertainty))
+					edge_contour, Uncertainty))
 				{
 					ellipse_pars[i][0] = sub_pixel_x;
 					ellipse_pars[i][1] = sub_pixel_y;
@@ -2306,7 +2467,7 @@ bool ImageDetectMethod::ImageDetectMethod::detectcodecircle_graysearch(cv::Mat o
 	}
 	return true;
 }
-bool ImageDetectMethod::detectcodecircle(cv::Mat ori_image, cv::Mat& code_point_mat, std::vector<std::vector<cv::Point>>& contours_pixel,
+bool ImageDetectMethod::detectcodecircle(cv::Mat ori_image, cv::Mat& code_point_mat, std::vector<std::vector<cv::Point2f>>& contours_pixel,
 	float ratio_k, float ratio_k1, float ratio_k2,
 	float min_radius, float max_radius, float ellipse_error_pixel /*=0.5*/,
 	MarkPointColorType color_type /*= BlackDownWhiteUp*/, CodePointBitesType code_bites_type /*=CodeBites15*/,
@@ -2387,18 +2548,29 @@ bool ImageDetectMethod::detectcodecircle(cv::Mat ori_image, cv::Mat& code_point_
 		}
 
 		std::vector<std::vector<cv::Point2f>> subpixel_edge_contours;
+		std::vector<int> subpixel_edge_contours_index;
 		for (int i = 0; i < ellipse_pars.size(); i++)
 		{
 			float sub_pixel_x, sub_pixel_y;
 			std::vector<cv::Point2f> edge_contour;
 			if (FindSubPixelPosOfCircleCenter_opnecv(processed_image_mat, ellipse_pars[i][0], ellipse_pars[i][1], ellipse_pars[i][2],
 				ellipse_pars[i][3], ellipse_pars[i][4], contours[ellipse_pars[i][6]], sub_pixel_x, sub_pixel_y,
-				&edge_contour, Uncertainty))
+				edge_contour, Uncertainty))
 			{
 				ellipse_pars[i][0] = sub_pixel_x;
 				ellipse_pars[i][1] = sub_pixel_y;
+				subpixel_edge_contours.push_back(edge_contour);
 			}
-			subpixel_edge_contours.push_back(edge_contour);
+			else
+			{
+				edge_contour.clear();
+				for (int tt = 0; tt < contours[ellipse_pars[i][6]].size(); tt++)
+				{
+					edge_contour.push_back(cv::Point2f(contours[ellipse_pars[i][6]][tt].x, contours[ellipse_pars[i][6]][tt].y));
+				}
+				subpixel_edge_contours.push_back(edge_contour);
+			}
+			subpixel_edge_contours_index.push_back(ellipse_pars[i][6]);
 		}
 
 		for (int i = 0; i < ellipse_pars.size(); i++)
@@ -2406,7 +2578,13 @@ bool ImageDetectMethod::detectcodecircle(cv::Mat ori_image, cv::Mat& code_point_
 			if (ellipse_pars[i][8] > 0)
 			{
 				ellipse_pars_all.append(ellipse_pars[i]);
-				contours_pixel.push_back(contours[ellipse_pars[i][6]]);
+				for (int j = 0; j < subpixel_edge_contours_index.size(); j++)
+				{
+					if (subpixel_edge_contours_index[j] == ellipse_pars[i][6])
+					{
+						contours_pixel.push_back(subpixel_edge_contours[j]);
+					}
+				}
 			}
 		}
 	}
@@ -2471,18 +2649,29 @@ bool ImageDetectMethod::detectcodecircle(cv::Mat ori_image, cv::Mat& code_point_
 		}
 
 		std::vector<std::vector<cv::Point2f>> subpixel_edge_contours;
+		std::vector<int> subpixel_edge_contours_index;
 		for (int i = 0; i < ellipse_pars.size(); i++)
 		{
 			float sub_pixel_x, sub_pixel_y;
 			std::vector<cv::Point2f> edge_contour;
 			if (FindSubPixelPosOfCircleCenter_opnecv(processed_image_mat, ellipse_pars[i][0], ellipse_pars[i][1], ellipse_pars[i][2],
 				ellipse_pars[i][3], ellipse_pars[i][4], contours[ellipse_pars[i][6]], sub_pixel_x, sub_pixel_y,
-				&edge_contour, Uncertainty))
+				edge_contour, Uncertainty))
 			{
 				ellipse_pars[i][0] = sub_pixel_x;
 				ellipse_pars[i][1] = sub_pixel_y;
+				subpixel_edge_contours.push_back(edge_contour);
 			}
-			subpixel_edge_contours.push_back(edge_contour);
+			else
+			{
+				edge_contour.clear();
+				for (int tt = 0; tt < contours[ellipse_pars[i][6]].size(); tt++)
+				{
+					edge_contour.push_back(cv::Point2f(contours[ellipse_pars[i][6]][tt].x, contours[ellipse_pars[i][6]][tt].y));
+				}
+				subpixel_edge_contours.push_back(edge_contour);
+			}
+			subpixel_edge_contours_index.push_back(ellipse_pars[i][6]);
 		}
 
 		for (int i = 0; i < ellipse_pars.size(); i++)
@@ -2490,7 +2679,13 @@ bool ImageDetectMethod::detectcodecircle(cv::Mat ori_image, cv::Mat& code_point_
 			if (ellipse_pars[i][8] > 0)
 			{
 				ellipse_pars_all.append(ellipse_pars[i]);
-				contours_pixel.push_back(contours[ellipse_pars[i][6]]);
+				for (int j = 0; j < subpixel_edge_contours_index.size(); j++)
+				{
+					if (subpixel_edge_contours_index[j] == ellipse_pars[i][6])
+					{
+						contours_pixel.push_back(subpixel_edge_contours[j]);
+					}
+				}
 			}
 		}
 	}

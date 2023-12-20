@@ -1008,7 +1008,7 @@
            </layout>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_20" stretch="0,1">
+           <layout class="QHBoxLayout" name="horizontalLayout_20" stretch="0,1,0,1">
             <item>
              <widget class="QLabel" name="pnp_label">
               <property name="text">
@@ -1023,6 +1023,23 @@
               </property>
               <property name="value">
                <double>5.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="max_pixel_error_label">
+              <property name="text">
+               <string>Max Pixel Error:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QDoubleSpinBox" name="max_pixel_error_doubleSpinBox">
+              <property name="minimum">
+               <double>0.010000000000000</double>
+              </property>
+              <property name="value">
+               <double>1.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -1277,7 +1294,7 @@
               <item>
                <widget class="QDoubleSpinBox" name="loss_doubleSpinBox">
                 <property name="value">
-                 <double>0.100000000000000</double>
+                 <double>1.000000000000000</double>
                 </property>
                </widget>
               </item>

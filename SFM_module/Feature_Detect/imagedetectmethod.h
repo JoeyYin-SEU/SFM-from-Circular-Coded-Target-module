@@ -20,6 +20,7 @@ Originally written by Professor Dong Shuai, with extensive detailed modification
 #include <cstdlib>
 #include "Matlab2C/imedge_2d.h"
 #include "Matlab2C/get_chessborad_pixel.h"
+#include "Matlab2C/get_fx_fy.h"
 #include "Matlab2C/get_chessborad_pixel_terminate.h"
 #include "Matlab2C/rt_nonfinite.h"
 #include "Matlab2C/coder_array.h"
@@ -28,35 +29,11 @@ Originally written by Professor Dong Shuai, with extensive detailed modification
 //#include "edge/imedge_2d.h"
 //#include "edge/imedge_2d_terminate.h"
 
-class Fit_ellipse_ceres
+struct Contour
 {
-public:
-	Fit_ellipse_ceres(const Eigen::Vector2d img_pixel) :
-		m_img_pixel(img_pixel) {}
-
-	template <typename T>
-	bool operator()(const T* coff, T* residuals) const
-	{
-		T tr_x = (m_img_pixel.x() - coff[0]) * cos(coff[4]) + (m_img_pixel.y() - coff[1]) * sin(coff[4]);
-		T tr_y = -(m_img_pixel.x() - coff[0]) * sin(coff[4]) + (m_img_pixel.y() - coff[1]) * cos(coff[4]);
-
-		T alfa = atan2(tr_y, tr_x);
-
-		T r = coff[2] * coff[3] / sqrt(coff[2] * coff[2] * sin(alfa) * sin(alfa) + coff[3] * coff[3] * cos(alfa) * cos(alfa));
-		residuals[0] = sqrt(tr_x * tr_x + tr_y * tr_y) - r;
-
-		return true;
-	}
-
-	// 生成误差函数
-	static ceres::CostFunction* Create(Eigen::Vector2d img_pixel)
-	{
-		return (new ceres::AutoDiffCostFunction<Fit_ellipse_ceres, 1, 5>
-			(new Fit_ellipse_ceres(img_pixel)));
-	}
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-private:
-	const Eigen::Vector2d m_img_pixel;
+	std::vector<cv::Point2f> points;
+	std::vector<float> direction;
+	std::vector<float> response;
 };
 
 class ImageDetectMethod : public QObject
@@ -77,7 +54,7 @@ public:
 
 	//棋盘标定板角点识别
 	static bool detectCheckerboard(cv::Mat I, std::vector<cv::Point2f>& corner_points, cv::Size& wh_check, double peakThreshold = 0.15, bool highDistortion = false, bool usePartial = false);
-	static bool detectcodecircle(cv::Mat ori_image, cv::Mat& code_point_mat, std::vector<std::vector<cv::Point>> & contours_pixel,
+	static bool detectcodecircle(cv::Mat ori_image, cv::Mat& code_point_mat, std::vector<std::vector<cv::Point2f>> & contours_pixel,
 		float ratio_k, float ratio_k1, float ratio_k2,
 		float min_radius, float max_radius, float ellipse_error_pixel = 0.5,
 		MarkPointColorType color_type = BlackDownWhiteUp, CodePointBitesType code_bites_type = CodeBites15,
@@ -93,8 +70,15 @@ public:
 
 private:
 	//图像预处理
+	static inline double getAmplitude(cv::Mat& dx, cv::Mat& dy, int i, int j);
+	static inline void getMagNeighbourhood(cv::Mat& dx, cv::Mat& dy, cv::Point& p, int w, int h, std::vector<double>& mag);
+	static inline void get2ndFacetModelIn3x3(std::vector<double>& mag, std::vector<double>& a);
+	static inline void eigenvals(std::vector<double>& a, double eigval[2], double eigvec[2][2]);
+	static inline double vector2angle(double x, double y);
 	static bool ImagePreprocess(const cv::Mat& ori_image_mat, cv::Mat& processed_image_mat);
 	static bool DetectClosedContours(const cv::Mat& image_mat, std::vector<std::vector<cv::Point>>& contours, DetectContoursMethod image_process_method);
+	static void Sub_pixel_edge(const cv::Mat image_mat, std::vector<Contour>& Cons, double sigma = sqrt(2));
+	static void extractSubPixPoints(cv::Mat& dx, cv::Mat& dy, std::vector<std::vector<cv::Point> >& contoursInPixel, std::vector<Contour>& contours);
 	
 	//ellipse_pars - n*6  center_x,center_y,r_a,r_b,angle_inPI,ellipse_error,contours_index,ID
 	static bool FilterEllipseContours(const std::vector<std::vector<cv::Point>>& contours, int min_radius_pixel, int max_radius_pixel, float ellipse_error_pixel,
@@ -141,7 +125,7 @@ private:
 	//亚像素定位
 	static bool FindSubPixelPosOfCircleCenter_opnecv(const cv::Mat& image_mat, float center_x, float center_y, float ellipse_a, float ellipse_b,
 		float angle_in_pi, const std::vector<cv::Point>& contour_points,
-		float& sub_pixel_center_x, float& sub_pixel_center_y, std::vector<cv::Point2f>* subpixel_edge_points = NULL, MarkPointColorType color_type = BlackDownWhiteUp);
+		float& sub_pixel_center_x, float& sub_pixel_center_y, std::vector<cv::Point2f>& subpixel_edge_points, MarkPointColorType color_type = BlackDownWhiteUp);
 
 	//获取椭圆局部感兴趣区域
 	static QRect GetEllipseROIRect(const cv::Mat& image_mat, float center_x, float center_y, float ellipse_a, float ellipse_b, float angle_in_pi);

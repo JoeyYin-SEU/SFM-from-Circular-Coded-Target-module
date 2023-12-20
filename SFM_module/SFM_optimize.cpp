@@ -1,10 +1,11 @@
 ﻿#include "SFM_optimize.h"
 #include <core/eigen.hpp>
-void SFM_optimize::calculate_Circle(std::vector<sfm_3d_group> &point_clouds, std::vector<std::vector<std::vector<cv::Point>>> contour_circle_serial,
+void SFM_optimize::calculate_Circle(std::vector<sfm_3d_group> &point_clouds, 
+	std::vector<std::vector<std::vector<cv::Point2f>>> contour_circle_serial,
 	std::vector<std::vector<Coded_detect_inf>> code_circle_serial, std::vector<Eigen::Vector3d>& ori_serial,
 	std::vector<Eigen::Quaterniond> camQvec, std::vector<Eigen::Vector3d> camTvec
 	, double* camK, double* camDK, double* camDP, double* camDT
-	, ceres::Solver::Summary* summary
+	, std::vector<ceres::Solver::Summary>* summary
 	, unsigned int max_iter_num
 	, double stop_value
 	, unsigned int num_threads
@@ -13,7 +14,6 @@ void SFM_optimize::calculate_Circle(std::vector<sfm_3d_group> &point_clouds, std
 	, double Loss_value)
 {
 	double* Circle_params = new double[point_clouds.size() * 6];
-	ceres::Problem problem;
 	std::vector<Eigen::Matrix<double, 3, 4>> K_serial;
 	Eigen::Matrix<double, 3, 3> I_matrix = Eigen::Matrix<double, 3, 3>::Zero();
 	I_matrix(0, 0) = camK[0];
@@ -128,6 +128,7 @@ void SFM_optimize::calculate_Circle(std::vector<sfm_3d_group> &point_clouds, std
 	}
 	for (int ii = 0; ii < point_clouds.size(); ii++)
 	{
+		ceres::Problem problem;
 		for (int pp = 0; pp < code_circle_serial.size(); pp++)
 		{
 			for (int qq = 0; qq < code_circle_serial[pp].size(); qq++)
@@ -165,22 +166,19 @@ void SFM_optimize::calculate_Circle(std::vector<sfm_3d_group> &point_clouds, std
 				}
 			}
 		}
-	}
-	ceres::Solver::Options options;
-	options.minimizer_progress_to_stdout = false;
-	options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
-	options.max_num_iterations = max_iter_num;
-	options.function_tolerance = stop_value;
-	options.gradient_tolerance = stop_value;
-	options.parameter_tolerance = stop_value;
-
-	ceres::Solve(options, &problem, summary);
-	for (int ii = 0; ii < point_clouds.size(); ii++)
-	{
+		ceres::Solver::Options options;
+		options.minimizer_progress_to_stdout = false;
+		options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
+		options.max_num_iterations = max_iter_num;
+		options.function_tolerance = stop_value;
+		options.gradient_tolerance = stop_value;
+		options.parameter_tolerance = stop_value;
+		ceres::Solve(options, &problem, &summary->at(ii));
 		ori_serial[ii].x() = sin(Circle_params[ii * 6 + 4]);
 		ori_serial[ii].y() = cos(Circle_params[ii * 6 + 4]) * sin(Circle_params[ii * 6 + 5]);
 		ori_serial[ii].z() = cos(Circle_params[ii * 6 + 4]) * cos(Circle_params[ii * 6 + 5]);
 		point_clouds[ii].R = Circle_params[ii * 6 + 3];
+
 	}
 	delete[] Circle_params;
 }
@@ -272,6 +270,7 @@ void SFM_optimize::calculate_SFM(std::vector<std::vector<Coded_detect_inf>> code
 	, std::vector<std::vector<cv::Point2d>>& Re_project_Map
 	, double*& camK, double*& camDK, double*& camDP, double*& camDT
 	, ceres::Solver::Summary* summary
+	, ceres::Solver::Summary* summary_AG
 	, unsigned int max_iter_num
 	, double stop_value
 	, unsigned int num_threads
@@ -287,66 +286,25 @@ void SFM_optimize::calculate_SFM(std::vector<std::vector<Coded_detect_inf>> code
 	, bool Use_shear
 	, bool Use_same_F
 	, double* F_range
-	, double* C_range)
+	, double* C_range
+	, double out_th)
 {
+	std::vector<Eigen::Quaterniond> camQvec_copy;
+	for (int ii = 0; ii < camQvec.size(); ii++)
+	{
+		Eigen::Quaterniond qua_temp = camQvec[ii];
+		camQvec_copy.push_back(qua_temp);
+	}
+	std::vector<Eigen::Vector3d> camTvec_copy;
+	for (int ii = 0; ii < camTvec.size(); ii++)
+	{
+		Eigen::Vector3d vec_temp = camTvec[ii];
+		camTvec_copy.push_back(vec_temp);
+	}
 	double* opt_points = new double[3 * point_clouds.size()];
 	double* T_sec = new double[2];
 	T_sec[0] = asin(camTvec[1][0]);
 	T_sec[1] = atan2(camTvec[1][1], camTvec[1][2]);
-
-
-	Re_project_Map.clear();
-	double al_er = 0;
-	for (int pp = 0; pp < code_circle_serial.size(); pp++)
-	{
-		std::vector<cv::Point2d> err_temp;
-		for (int qq = 0; qq < code_circle_serial[pp].size(); qq++)
-		{
-			bool has_exist = false;
-			for (int ii = 0; ii < point_clouds.size(); ii++)
-			{
-				if (code_circle_serial[pp][qq].code_num == point_clouds[ii].code)
-				{
-					point_clouds[ii].weight++;
-					Eigen::Quaternion<double> qvec(camQvec[pp]);
-					Eigen::Matrix<double, 3, 1> tvec;
-					tvec << camTvec[pp][0], camTvec[pp][1], camTvec[pp][2];
-
-					Eigen::Vector3d obj(point_clouds.at(ii).x, point_clouds.at(ii).y, point_clouds.at(ii).z);
-					Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
-
-					Eigen::Matrix<double, 3, 1> obj_cam_coor = qvec.toRotationMatrix() * obj + tvec;
-
-					double a = obj_cam_coor(0) / obj_cam_coor(2);
-					double b = obj_cam_coor(1) / obj_cam_coor(2);
-					double r2 = (a * a + b * b);
-					double r4 = r2 * r2;
-					double r6 = r2 * r4;
-
-					double xd = a * (1.0 + camDK[0] * r2 + camDK[1] * r4 + camDK[2] * r6)
-						/ (1.0 + camDK[3] * r2 + camDK[4] * r4 + camDK[5] * r6)
-						+ 2.0 * camDP[0] * a * b + camDP[1] * (r2 + 2.0 * a * a)
-						+ camDT[0] * r2 + camDT[2] * r4;
-					double yd = b * (1.0 + camDK[0] * r2 + camDK[1] * r4 + camDK[2] * r6)
-						/ (1.0 + camDK[3] * r2 + camDK[4] * r4 + camDK[5] * r6)
-						+ 2.0 * camDP[1] * a * b + camDP[0] * (r2 + 2.0 * b * b)
-						+ camDT[1] * r2 + camDT[3] * r4;
-
-					double ud = camK[0] * xd + camK[4] * yd + camK[2];
-					double vd = camK[1] * yd + camK[3];
-					err_temp.push_back(cv::Point2d(ud - img(0), vd - img(1)));
-
-					has_exist = true;
-					break;
-				}
-			}
-			if (!has_exist)
-			{
-				err_temp.push_back(cv::Point2d(std::numeric_limits<double>::max(), std::numeric_limits<double>::max()));
-			}
-		}
-		Re_project_Map.push_back(err_temp);
-	}
 
 	for (int ii = 0; ii < point_clouds.size(); ii++)
 	{
@@ -579,7 +537,6 @@ void SFM_optimize::calculate_SFM(std::vector<std::vector<Coded_detect_inf>> code
 			}
 		}
 
-		
 		ceres::Solver::Options options;
 		options.minimizer_progress_to_stdout = false;
 		options.linear_solver_type = ceres::DENSE_SCHUR;
@@ -593,6 +550,316 @@ void SFM_optimize::calculate_SFM(std::vector<std::vector<Coded_detect_inf>> code
 		camTvec[1][0] = sin(T_sec[0]);
 		camTvec[1][1] = cos(T_sec[0]) * sin(T_sec[1]);
 		camTvec[1][2] = cos(T_sec[0]) * cos(T_sec[1]);
+		bool need_recal = false;
+		std::vector<std::vector<bool>> Serial_enable;
+		for (int pp = 0; pp < code_circle_serial.size(); pp++)
+		{
+			std::vector<bool> enable_temp;
+			for (int qq = 0; qq < code_circle_serial[pp].size(); qq++)
+			{
+				bool has_exist = false;
+				for (int ii = 0; ii < point_clouds.size(); ii++)
+				{
+					if (code_circle_serial[pp][qq].code_num == point_clouds[ii].code)
+					{
+						Eigen::Quaternion<double> qvec(camQvec[pp]);
+						Eigen::Matrix<double, 3, 1> tvec;
+						tvec << camTvec[pp][0], camTvec[pp][1], camTvec[pp][2];
+
+						Eigen::Vector3d obj(opt_points[ii * 3], opt_points[ii * 3 + 1], opt_points[ii * 3 + 2]);
+						Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
+
+						Eigen::Matrix<double, 3, 1> obj_cam_coor = qvec.toRotationMatrix() * obj + tvec;
+
+						double a = obj_cam_coor(0) / obj_cam_coor(2);
+						double b = obj_cam_coor(1) / obj_cam_coor(2);
+						double r2 = (a * a + b * b);
+						double r4 = r2 * r2;
+						double r6 = r2 * r4;
+
+						double xd = a * (1.0 + camDK[0] * r2 + camDK[1] * r4 + camDK[2] * r6)
+							/ (1.0 + camDK[3] * r2 + camDK[4] * r4 + camDK[5] * r6)
+							+ 2.0 * camDP[0] * a * b + camDP[1] * (r2 + 2.0 * a * a)
+							+ camDT[0] * r2 + camDT[2] * r4;
+						double yd = b * (1.0 + camDK[0] * r2 + camDK[1] * r4 + camDK[2] * r6)
+							/ (1.0 + camDK[3] * r2 + camDK[4] * r4 + camDK[5] * r6)
+							+ 2.0 * camDP[1] * a * b + camDP[0] * (r2 + 2.0 * b * b)
+							+ camDT[1] * r2 + camDT[3] * r4;
+
+						double ud = camK[0] * xd + camK[4] * yd + camK[2];
+						double vd = camK[1] * yd + camK[3];
+						if (sqrt(pow(ud - img(0), 2) + pow(vd - img(1), 2)) < out_th)
+						{
+							enable_temp.push_back(true);
+						}
+						else
+						{
+							need_recal = true;
+							enable_temp.push_back(false);
+						}
+						has_exist = true;
+						break;
+					}
+				}
+				if (!has_exist)
+				{
+					enable_temp.push_back(false);
+				}
+			}
+			Serial_enable.push_back(enable_temp);
+		}
+		if (need_recal)
+		{
+			for (int ii = 0; ii < camQvec.size(); ii++)
+			{
+				camQvec[ii] = camQvec_copy[ii];
+			}
+			for (int ii = 0; ii < camTvec.size(); ii++)
+			{
+				camTvec[ii] = camTvec_copy[ii];
+			}
+			for (int ii = 0; ii < point_clouds.size(); ii++)
+			{
+				opt_points[ii * 3] = point_clouds[ii].x;
+				opt_points[ii * 3 + 1] = point_clouds[ii].y;
+				opt_points[ii * 3 + 2] = point_clouds[ii].z;
+			}
+
+			ceres::Problem problem_AG;
+			ceres::LocalParameterization* qvec_parameterization_AG = new ceres::EigenQuaternionParameterization;
+			for (int ii = 0; ii < point_clouds.size(); ii++)
+			{
+				for (int pp = 0; pp < code_circle_serial.size(); pp++)
+				{
+					for (int qq = 0; qq < code_circle_serial[pp].size(); qq++)
+					{
+						if (!Serial_enable[pp][qq])
+						{
+							continue;
+						}
+						if (code_circle_serial[pp][qq].code_num == point_clouds[ii].code)
+						{
+							if (pp == 0)
+							{
+								Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
+								ceres::CostFunction* cost_function = ProjectErrorCostFunctionPinehole_SFM_first::Create(img);
+								ceres::LossFunction* loss_function;
+								switch (Loss_type)
+								{
+								case 0:
+									loss_function = new ceres::TrivialLoss();
+									break;
+								case 1:
+									loss_function = new ceres::HuberLoss(Loss_value);
+									break;
+								case 2:
+									loss_function = new ceres::SoftLOneLoss(Loss_value);
+									break;
+								case 3:
+									loss_function = new ceres::CauchyLoss(Loss_value);
+									break;
+								case 4:
+									loss_function = new ceres::ArctanLoss(Loss_value);
+									break;
+								default:
+									loss_function = new ceres::CauchyLoss(Loss_value);
+									break;
+								}
+								problem_AG.AddResidualBlock(cost_function, loss_function, opt_points + ii * 3, camK, camK + 2, camK + 4,
+									camDK, camDK + 1, camDK + 2, camDK + 3, camDK + 4, camDK + 5, camDP, camDT, camDT + 2);
+							}
+							else if (pp == 1)
+							{
+								Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
+								ceres::CostFunction* cost_function = ProjectErrorCostFunctionPinehole_SFM_Rtheta::Create(img);
+								ceres::LossFunction* loss_function;
+								switch (Loss_type)
+								{
+								case 0:
+									loss_function = new ceres::TrivialLoss();
+									break;
+								case 1:
+									loss_function = new ceres::HuberLoss(Loss_value);
+									break;
+								case 2:
+									loss_function = new ceres::SoftLOneLoss(Loss_value);
+									break;
+								case 3:
+									loss_function = new ceres::CauchyLoss(Loss_value);
+									break;
+								case 4:
+									loss_function = new ceres::ArctanLoss(Loss_value);
+									break;
+								default:
+									loss_function = new ceres::CauchyLoss(Loss_value);
+									break;
+								}
+								problem_AG.AddResidualBlock(cost_function, loss_function, opt_points + ii * 3, camK, camK + 2, camK + 4,
+									camDK, camDK + 1, camDK + 2, camDK + 3, camDK + 4, camDK + 5, camDP, camDT, camDT + 2, camQvec[pp].coeffs().data(), T_sec);
+							}
+							else
+							{
+								Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
+								ceres::CostFunction* cost_function = ProjectErrorCostFunctionPinehole_SFM::Create(img);
+								ceres::LossFunction* loss_function;
+								switch (Loss_type)
+								{
+								case 0:
+									loss_function = new ceres::TrivialLoss();
+									break;
+								case 1:
+									loss_function = new ceres::HuberLoss(Loss_value);
+									break;
+								case 2:
+									loss_function = new ceres::SoftLOneLoss(Loss_value);
+									break;
+								case 3:
+									loss_function = new ceres::CauchyLoss(Loss_value);
+									break;
+								case 4:
+									loss_function = new ceres::ArctanLoss(Loss_value);
+									break;
+								default:
+									loss_function = new ceres::CauchyLoss(Loss_value);
+									break;
+								}
+								problem_AG.AddResidualBlock(cost_function, loss_function, opt_points + ii * 3, camK, camK + 2, camK + 4,
+									camDK, camDK + 1, camDK + 2, camDK + 3, camDK + 4, camDK + 5, camDP, camDT, camDT + 2, camQvec[pp].coeffs().data(), camTvec[pp].data());
+							}
+							if (pp != 0)
+							{
+								problem.SetParameterization(camQvec[pp].coeffs().data(), qvec_parameterization_AG);
+							}
+						}
+					}
+				}
+			}
+			if (Fixed_all)
+			{
+				problem_AG.SetParameterBlockConstant(camK);
+				problem_AG.SetParameterBlockConstant(camK + 2);
+				problem_AG.SetParameterBlockConstant(camK + 4);
+				for (int tt = 0; tt < 6; tt++)
+				{
+					problem_AG.SetParameterBlockConstant(camDK + tt);
+				}
+				problem_AG.SetParameterBlockConstant(camDT);
+				problem_AG.SetParameterBlockConstant(camDT + 2);
+				problem_AG.SetParameterBlockConstant(camDP);
+			}
+			else
+			{
+				if (F_range != nullptr && Use_F)
+				{
+					if (F_range[2] == 0)
+					{
+						problem_AG.SetParameterBlockConstant(camK);
+					}
+					else
+					{
+						problem_AG.SetParameterLowerBound(camK, 0, F_range[0] - F_range[2]);
+						problem_AG.SetParameterLowerBound(camK, 1, F_range[1] - F_range[2]);
+						problem_AG.SetParameterUpperBound(camK, 0, F_range[0] + F_range[2]);
+						problem_AG.SetParameterUpperBound(camK, 1, F_range[1] + F_range[2]);
+					}
+				}
+				if (C_range != nullptr && Use_Cx_Cy)
+				{
+					if (C_range[2] == 0)
+					{
+						problem_AG.SetParameterBlockConstant(camK + 2);
+					}
+					else
+					{
+						problem_AG.SetParameterLowerBound(camK + 2, 0, C_range[0] - C_range[2]);
+						problem_AG.SetParameterLowerBound(camK + 2, 1, C_range[1] - C_range[2]);
+						problem_AG.SetParameterUpperBound(camK + 2, 0, C_range[0] + C_range[2]);
+						problem_AG.SetParameterUpperBound(camK + 2, 1, C_range[1] + C_range[2]);
+					}
+				}
+				switch (Dis_P_num)
+				{
+				case 0:
+					camDP[0] = 0;
+					camDP[1] = 0;
+					problem_AG.SetParameterBlockConstant(camDP);
+					break;
+				default:
+					problem_AG.SetParameterBlockVariable(camDP);
+					break;
+				}
+
+				switch (Dis_T_num)
+				{
+				case 0:
+					camDT[0] = 0;
+					camDT[1] = 0;
+					camDT[2] = 0;
+					camDT[3] = 0;
+					problem_AG.SetParameterBlockConstant(camDT);
+					problem_AG.SetParameterBlockConstant(camDT + 2);
+					break;
+				case 2:
+					camDT[2] = 0;
+					camDT[3] = 0;
+					problem_AG.SetParameterBlockVariable(camDT);
+					problem_AG.SetParameterBlockConstant(camDT + 2);
+					break;
+				default:
+					problem_AG.SetParameterBlockVariable(camDT);
+					problem_AG.SetParameterBlockVariable(camDT + 2);
+					break;
+				}
+
+				if (!Use_F)
+				{
+					problem_AG.SetParameterBlockConstant(camK);
+				}
+				else
+				{
+					problem_AG.SetParameterBlockVariable(camK);
+				}
+				if (!Use_Cx_Cy)
+				{
+					problem_AG.SetParameterBlockConstant(camK + 2);
+				}
+				else
+				{
+					problem_AG.SetParameterBlockVariable(camK + 2);
+				}
+				if (!Use_shear)
+				{
+					camK[4] = 0;
+					problem_AG.SetParameterBlockConstant(camK + 4);
+				}
+				else
+				{
+					problem_AG.SetParameterBlockVariable(camK + 4);
+				}
+				for (int tt = 0; tt < Dis_K_num; tt++)
+				{
+					problem_AG.SetParameterBlockVariable(camDK + tt);
+				}
+				for (int tt = Dis_K_num; tt < 6; tt++)
+				{
+					camDK[tt] = 0;
+					problem_AG.SetParameterBlockConstant(camDK + tt);
+				}
+			}
+
+			ceres::Solver::Options options;
+			options.minimizer_progress_to_stdout = false;
+			options.linear_solver_type = ceres::DENSE_SCHUR;
+			options.max_num_iterations = max_iter_num;
+			options.function_tolerance = stop_value;
+			options.gradient_tolerance = stop_value;
+			options.parameter_tolerance = stop_value;
+
+			ceres::Solve(options, &problem_AG, summary_AG);
+			camTvec[1][0] = sin(T_sec[0]);
+			camTvec[1][1] = cos(T_sec[0]) * sin(T_sec[1]);
+			camTvec[1][2] = cos(T_sec[0]) * cos(T_sec[1]);
+		}
 		for (int ii = 0; ii < point_clouds.size(); ii++)
 		{
 			point_clouds[ii].x = opt_points[ii * 3];
@@ -606,6 +873,10 @@ void SFM_optimize::calculate_SFM(std::vector<std::vector<Coded_detect_inf>> code
 			std::vector<cv::Point2d> err_temp;
 			for (int qq = 0; qq < code_circle_serial[pp].size(); qq++)
 			{
+				if (!Serial_enable[pp][qq])
+				{
+					err_temp.push_back(cv::Point2d(std::numeric_limits<double>::max(), std::numeric_limits<double>::max()));
+				}
 				bool has_exist = false;
 				for (int ii = 0; ii < point_clouds.size(); ii++)
 				{
@@ -894,18 +1165,11 @@ void SFM_optimize::calculate_SFM(std::vector<std::vector<Coded_detect_inf>> code
 		camTvec[1][0] = sin(T_sec[0]);
 		camTvec[1][1] = cos(T_sec[0]) * sin(T_sec[1]);
 		camTvec[1][2] = cos(T_sec[0]) * cos(T_sec[1]);
-		for (int ii = 0; ii < point_clouds.size(); ii++)
-		{
-			point_clouds[ii].x = opt_points[ii * 3];
-			point_clouds[ii].y = opt_points[ii * 3 + 1];
-			point_clouds[ii].z = opt_points[ii * 3 + 2];
-		}
-
-		Re_project_Map.clear();
-		double al_er = 0;
+		bool need_recal = false;
+		std::vector<std::vector<bool>> Serial_enable;
 		for (int pp = 0; pp < code_circle_serial.size(); pp++)
 		{
-			std::vector<cv::Point2d> err_temp;
+			std::vector<bool> enable_temp;
 			for (int qq = 0; qq < code_circle_serial[pp].size(); qq++)
 			{
 				bool has_exist = false;
@@ -913,12 +1177,11 @@ void SFM_optimize::calculate_SFM(std::vector<std::vector<Coded_detect_inf>> code
 				{
 					if (code_circle_serial[pp][qq].code_num == point_clouds[ii].code)
 					{
-						point_clouds[ii].weight++;
 						Eigen::Quaternion<double> qvec(camQvec[pp]);
 						Eigen::Matrix<double, 3, 1> tvec;
 						tvec << camTvec[pp][0], camTvec[pp][1], camTvec[pp][2];
 
-						Eigen::Vector3d obj(point_clouds.at(ii).x, point_clouds.at(ii).y, point_clouds.at(ii).z);
+						Eigen::Vector3d obj(opt_points[ii * 3], opt_points[ii * 3 + 1], opt_points[ii * 3 + 2]);
 						Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
 
 						Eigen::Matrix<double, 3, 1> obj_cam_coor = qvec.toRotationMatrix() * obj + tvec;
@@ -940,297 +1203,276 @@ void SFM_optimize::calculate_SFM(std::vector<std::vector<Coded_detect_inf>> code
 
 						double ud = camK[0] * xd + camK[4] * yd + camK[2];
 						double vd = camK[1] * yd + camK[3];
-						err_temp.push_back(cv::Point2d(ud - img(0), vd - img(1)));
-
+						if (sqrt(pow(ud - img(0), 2) + pow(vd - img(1), 2)) < out_th)
+						{
+							enable_temp.push_back(true);
+						}
+						else
+						{
+							need_recal = true;
+							enable_temp.push_back(false);
+						}
 						has_exist = true;
 						break;
 					}
 				}
 				if (!has_exist)
 				{
-					err_temp.push_back(cv::Point2d(std::numeric_limits<double>::max(), std::numeric_limits<double>::max()));
+					enable_temp.push_back(false);
 				}
 			}
-			Re_project_Map.push_back(err_temp);
+			Serial_enable.push_back(enable_temp);
 		}
-	}
-}
-
-
-void SFM_optimize::calculate_SFM_part(std::vector<std::vector<Coded_detect_inf>> code_circle_serial,
-	std::vector<sfm_3d_group>& point_clouds,
-	std::vector<Eigen::Quaterniond>& camQvec, std::vector<Eigen::Vector3d>& camTvec
-	, std::vector<std::vector<cv::Point2d>>& Re_project_Map
-	, double*& camK, double*& camDK, double*& camDP, double*& camDT
-	, ceres::Solver::Summary* summary
-	, unsigned int max_iter_num
-	, double stop_value
-	, unsigned int num_threads
-	, unsigned int timeout
-	, unsigned char Loss_type
-	, double Loss_value
-	, unsigned int Dis_K_num
-	, unsigned int Dis_P_num
-	, unsigned int Dis_T_num
-	, bool Fixed_all
-	, bool Use_F
-	, bool Use_Cx_Cy
-	, bool Use_shear
-	, bool Use_same_F
-	, double* F_range
-	, double* C_range)
-{
-	double* opt_points = new double[3 * point_clouds.size()];
-	double* T_sec = new double[2];
-	T_sec[0] = asin(camTvec[1][0]);
-	T_sec[1] = atan2(camTvec[1][1], camTvec[1][2]);
-
-	Re_project_Map.clear();
-	double al_er = 0;
-	for (int pp = 0; pp < code_circle_serial.size(); pp++)
-	{
-		std::vector<cv::Point2d> err_temp;
-		for (int qq = 0; qq < code_circle_serial[pp].size(); qq++)
+		if (need_recal)
 		{
-			bool has_exist = false;
+			for (int ii = 0; ii < camQvec.size(); ii++)
+			{
+				camQvec[ii] = camQvec_copy[ii];
+			}
+			for (int ii = 0; ii < camTvec.size(); ii++)
+			{
+				camTvec[ii] = camTvec_copy[ii];
+			}
 			for (int ii = 0; ii < point_clouds.size(); ii++)
 			{
-				if (code_circle_serial[pp][qq].code_num == point_clouds[ii].code)
+				opt_points[ii * 3] = point_clouds[ii].x;
+				opt_points[ii * 3 + 1] = point_clouds[ii].y;
+				opt_points[ii * 3 + 2] = point_clouds[ii].z;
+			}
+			ceres::Problem problem_AG;
+			ceres::LocalParameterization* qvec_parameterization_AG = new ceres::EigenQuaternionParameterization;
+			for (int ii = 0; ii < point_clouds.size(); ii++)
+			{
+				for (int pp = 0; pp < code_circle_serial.size(); pp++)
 				{
-					point_clouds[ii].weight++;
-					Eigen::Quaternion<double> qvec(camQvec[pp]);
-					Eigen::Matrix<double, 3, 1> tvec;
-					tvec << camTvec[pp][0], camTvec[pp][1], camTvec[pp][2];
+					for (int qq = 0; qq < code_circle_serial[pp].size(); qq++)
+					{
+						if (code_circle_serial[pp][qq].code_num == point_clouds[ii].code)
+						{
+							if (pp == 0)
+							{
+								Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
+								ceres::CostFunction* cost_function = ProjectErrorCostFunctionPinehole_SFM_first_sameF::Create(img);
+								ceres::LossFunction* loss_function;
+								switch (Loss_type)
+								{
+								case 0:
+									loss_function = new ceres::TrivialLoss();
+									break;
+								case 1:
+									loss_function = new ceres::HuberLoss(Loss_value);
+									break;
+								case 2:
+									loss_function = new ceres::SoftLOneLoss(Loss_value);
+									break;
+								case 3:
+									loss_function = new ceres::CauchyLoss(Loss_value);
+									break;
+								case 4:
+									loss_function = new ceres::ArctanLoss(Loss_value);
+									break;
+								default:
+									loss_function = new ceres::CauchyLoss(Loss_value);
+									break;
+								}
+								problem_AG.AddResidualBlock(cost_function, loss_function, opt_points + ii * 3, camK, camK + 2, camK + 4,
+									camDK, camDK + 1, camDK + 2, camDK + 3, camDK + 4, camDK + 5, camDP, camDT, camDT + 2);
+							}
+							else if (pp == 1)
+							{
+								Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
+								ceres::CostFunction* cost_function = ProjectErrorCostFunctionPinehole_SFM_Rtheta_sameF::Create(img);
+								ceres::LossFunction* loss_function;
+								switch (Loss_type)
+								{
+								case 0:
+									loss_function = new ceres::TrivialLoss();
+									break;
+								case 1:
+									loss_function = new ceres::HuberLoss(Loss_value);
+									break;
+								case 2:
+									loss_function = new ceres::SoftLOneLoss(Loss_value);
+									break;
+								case 3:
+									loss_function = new ceres::CauchyLoss(Loss_value);
+									break;
+								case 4:
+									loss_function = new ceres::ArctanLoss(Loss_value);
+									break;
+								default:
+									loss_function = new ceres::CauchyLoss(Loss_value);
+									break;
+								}
+								problem_AG.AddResidualBlock(cost_function, loss_function, opt_points + ii * 3, camK, camK + 2, camK + 4,
+									camDK, camDK + 1, camDK + 2, camDK + 3, camDK + 4, camDK + 5, camDP, camDT, camDT + 2, camQvec[pp].coeffs().data(), T_sec);
+							}
+							else
+							{
+								Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
+								ceres::CostFunction* cost_function = ProjectErrorCostFunctionPinehole_SFM_sameF::Create(img);
+								ceres::LossFunction* loss_function;
+								switch (Loss_type)
+								{
+								case 0:
+									loss_function = new ceres::TrivialLoss();
+									break;
+								case 1:
+									loss_function = new ceres::HuberLoss(Loss_value);
+									break;
+								case 2:
+									loss_function = new ceres::SoftLOneLoss(Loss_value);
+									break;
+								case 3:
+									loss_function = new ceres::CauchyLoss(Loss_value);
+									break;
+								case 4:
+									loss_function = new ceres::ArctanLoss(Loss_value);
+									break;
+								default:
+									loss_function = new ceres::CauchyLoss(Loss_value);
+									break;
+								}
+								problem_AG.AddResidualBlock(cost_function, loss_function, opt_points + ii * 3, camK, camK + 2, camK + 4,
+									camDK, camDK + 1, camDK + 2, camDK + 3, camDK + 4, camDK + 5, camDP, camDT, camDT + 2, camQvec[pp].coeffs().data(), camTvec[pp].data());
+							}
+							if (pp != 0)
+							{
+								problem_AG.SetParameterization(camQvec[pp].coeffs().data(), qvec_parameterization_AG);
+							}
+						}
+					}
+				}
+			}
 
-					Eigen::Vector3d obj(point_clouds.at(ii).x, point_clouds.at(ii).y, point_clouds.at(ii).z);
-					Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
 
-					Eigen::Matrix<double, 3, 1> obj_cam_coor = qvec.toRotationMatrix() * obj + tvec;
+			if (Fixed_all)
+			{
+				problem_AG.SetParameterBlockConstant(camK);
+				problem_AG.SetParameterBlockConstant(camK + 2);
+				problem_AG.SetParameterBlockConstant(camK + 4);
+				problem_AG.SetParameterBlockConstant(camK);
+				problem_AG.SetParameterBlockConstant(camK + 2);
+				problem_AG.SetParameterBlockConstant(camK + 4);
+				for (int tt = 0; tt < 6; tt++)
+				{
+					problem_AG.SetParameterBlockConstant(camDK + tt);
+				}
+				problem_AG.SetParameterBlockConstant(camDT);
+				problem_AG.SetParameterBlockConstant(camDT + 2);
+				problem_AG.SetParameterBlockConstant(camDP);
+			}
+			else
+			{
+				if (F_range != nullptr && Use_F)
+				{
+					if (F_range[2] == 0)
+					{
+						problem_AG.SetParameterBlockConstant(camK);
+					}
+					else
+					{
+						problem_AG.SetParameterLowerBound(camK, 0, F_range[0] - F_range[2]);
+						problem_AG.SetParameterUpperBound(camK, 0, F_range[0] + F_range[2]);
+					}
+				}
+				if (C_range != nullptr && Use_Cx_Cy)
+				{
+					if (C_range[2] == 0)
+					{
+						problem_AG.SetParameterBlockConstant(camK + 2);
+					}
+					else
+					{
+						problem_AG.SetParameterLowerBound(camK + 2, 0, C_range[0] - C_range[2]);
+						problem_AG.SetParameterLowerBound(camK + 2, 1, C_range[1] - C_range[2]);
+						problem_AG.SetParameterUpperBound(camK + 2, 0, C_range[0] + C_range[2]);
+						problem_AG.SetParameterUpperBound(camK + 2, 1, C_range[1] + C_range[2]);
+					}
+				}
 
-					double a = obj_cam_coor(0) / obj_cam_coor(2);
-					double b = obj_cam_coor(1) / obj_cam_coor(2);
-					double r2 = (a * a + b * b);
-					double r4 = r2 * r2;
-					double r6 = r2 * r4;
-
-					double xd = a * (1.0 + camDK[0] * r2 + camDK[1] * r4 + camDK[2] * r6)
-						/ (1.0 + camDK[3] * r2 + camDK[4] * r4 + camDK[5] * r6)
-						+ 2.0 * camDP[0] * a * b + camDP[1] * (r2 + 2.0 * a * a)
-						+ camDT[0] * r2 + camDT[2] * r4;
-					double yd = b * (1.0 + camDK[0] * r2 + camDK[1] * r4 + camDK[2] * r6)
-						/ (1.0 + camDK[3] * r2 + camDK[4] * r4 + camDK[5] * r6)
-						+ 2.0 * camDP[1] * a * b + camDP[0] * (r2 + 2.0 * b * b)
-						+ camDT[1] * r2 + camDT[3] * r4;
-
-					double ud = camK[0] * xd + camK[4] * yd + camK[2];
-					double vd = camK[1] * yd + camK[3];
-					err_temp.push_back(cv::Point2d(ud - img(0), vd - img(1)));
-					has_exist = true;
+				switch (Dis_P_num)
+				{
+				case 0:
+					camDP[0] = 0;
+					camDP[1] = 0;
+					problem_AG.SetParameterBlockConstant(camDP);
+					break;
+				default:
+					problem_AG.SetParameterBlockVariable(camDP);
 					break;
 				}
-			}
-			if (!has_exist)
-			{
-				err_temp.push_back(cv::Point2d(std::numeric_limits<double>::max(), std::numeric_limits<double>::max()));
-			}
-		}
-		Re_project_Map.push_back(err_temp);
-	}
 
-
-	std::vector<bool> poi_enable;
-	std::vector<bool> view_enable;
-	for (int ii = 0; ii < point_clouds.size(); ii++)
-	{
-		bool is_ena = false;
-		for (int jj = 0; jj < code_circle_serial[code_circle_serial.size() - 1].size(); jj++)
-		{
-			if (point_clouds[ii].code == code_circle_serial[code_circle_serial.size() - 1][jj].code_num)
-			{
-				is_ena = true;
-				break;
-			}
-		}
-		poi_enable.push_back(is_ena);
-	}
-
-	for (int ii = 0; ii < code_circle_serial.size() - 1; ii++)
-	{
-		view_enable.push_back(false);
-	}
-	view_enable.push_back(true);
-	for (int ii = 0; ii < point_clouds.size(); ii++)
-	{
-		point_clouds[ii].weight = 0;
-	}
-	if (!Use_same_F)
-	{
-		for (int ii = 0; ii < point_clouds.size(); ii++)
-		{
-			opt_points[ii * 3] = point_clouds[ii].x;
-			opt_points[ii * 3 + 1] = point_clouds[ii].y;
-			opt_points[ii * 3 + 2] = point_clouds[ii].z;
-		}
-
-		ceres::Problem problem;
-		ceres::LocalParameterization* qvec_parameterization = new ceres::EigenQuaternionParameterization;
-		for (int ii = 0; ii < point_clouds.size(); ii++)
-		{
-			for (int pp = 0; pp < code_circle_serial.size(); pp++)
-			{
-				for (int qq = 0; qq < code_circle_serial[pp].size(); qq++)
+				switch (Dis_T_num)
 				{
-					if (code_circle_serial[pp][qq].code_num == point_clouds[ii].code)
-					{
-						if (pp == 0)
-						{
-							Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
-							ceres::CostFunction* cost_function = ProjectErrorCostFunctionPinehole_SFM_first::Create(img);
-							ceres::LossFunction* loss_function;
-							switch (Loss_type)
-							{
-							case 0:
-								loss_function = new ceres::TrivialLoss();
-								break;
-							case 1:
-								loss_function = new ceres::HuberLoss(Loss_value);
-								break;
-							case 2:
-								loss_function = new ceres::SoftLOneLoss(Loss_value);
-								break;
-							case 3:
-								loss_function = new ceres::CauchyLoss(Loss_value);
-								break;
-							case 4:
-								loss_function = new ceres::ArctanLoss(Loss_value);
-								break;
-							default:
-								loss_function = new ceres::CauchyLoss(Loss_value);
-								break;
-							}
-							problem.AddResidualBlock(cost_function, loss_function, opt_points + ii * 3, camK, camK + 2, camK + 4,
-								camDK, camDK + 1, camDK + 2, camDK + 3, camDK + 4, camDK + 5, camDP, camDT, camDT + 2);
-						}
-						else if (pp == 1)
-						{
-							Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
-							ceres::CostFunction* cost_function = ProjectErrorCostFunctionPinehole_SFM_Rtheta::Create(img);
-							ceres::LossFunction* loss_function;
-							switch (Loss_type)
-							{
-							case 0:
-								loss_function = new ceres::TrivialLoss();
-								break;
-							case 1:
-								loss_function = new ceres::HuberLoss(Loss_value);
-								break;
-							case 2:
-								loss_function = new ceres::SoftLOneLoss(Loss_value);
-								break;
-							case 3:
-								loss_function = new ceres::CauchyLoss(Loss_value);
-								break;
-							case 4:
-								loss_function = new ceres::ArctanLoss(Loss_value);
-								break;
-							default:
-								loss_function = new ceres::CauchyLoss(Loss_value);
-								break;
-							}
-							problem.AddResidualBlock(cost_function, loss_function, opt_points + ii * 3, camK, camK + 2, camK + 4,
-								camDK, camDK + 1, camDK + 2, camDK + 3, camDK + 4, camDK + 5, camDP, camDT, camDT + 2, camQvec[pp].coeffs().data(), T_sec);
-						}
-						else
-						{
-							Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
-							ceres::CostFunction* cost_function = ProjectErrorCostFunctionPinehole_SFM::Create(img);
-							ceres::LossFunction* loss_function;
-							switch (Loss_type)
-							{
-							case 0:
-								loss_function = new ceres::TrivialLoss();
-								break;
-							case 1:
-								loss_function = new ceres::HuberLoss(Loss_value);
-								break;
-							case 2:
-								loss_function = new ceres::SoftLOneLoss(Loss_value);
-								break;
-							case 3:
-								loss_function = new ceres::CauchyLoss(Loss_value);
-								break;
-							case 4:
-								loss_function = new ceres::ArctanLoss(Loss_value);
-								break;
-							default:
-								loss_function = new ceres::CauchyLoss(Loss_value);
-								break;
-							}
-							problem.AddResidualBlock(cost_function, loss_function, opt_points + ii * 3, camK, camK + 2, camK + 4,
-								camDK, camDK + 1, camDK + 2, camDK + 3, camDK + 4, camDK + 5, camDP, camDT, camDT + 2, camQvec[pp].coeffs().data(), camTvec[pp].data());
-						}
-						if (pp != 0)
-						{
-							problem.SetParameterization(camQvec[pp].coeffs().data(), qvec_parameterization);
-						}
-					}
+				case 0:
+					camDT[0] = 0;
+					camDT[1] = 0;
+					camDT[2] = 0;
+					camDT[3] = 0;
+					problem_AG.SetParameterBlockConstant(camDT);
+					problem_AG.SetParameterBlockConstant(camDT + 2);
+					break;
+				case 2:
+					camDT[2] = 0;
+					camDT[3] = 0;
+					problem_AG.SetParameterBlockVariable(camDT);
+					problem_AG.SetParameterBlockConstant(camDT + 2);
+					break;
+				default:
+					problem_AG.SetParameterBlockVariable(camDT);
+					problem_AG.SetParameterBlockVariable(camDT + 2);
+					break;
 				}
-			}
-		}
-		problem.SetParameterBlockConstant(camK);
-		problem.SetParameterBlockConstant(camK + 2);
-		problem.SetParameterBlockConstant(camK + 4);
 
-		for (int tt = 0; tt < 6; tt++)
-		{
-			problem.SetParameterBlockConstant(camDK + tt);
-		}
-		problem.SetParameterBlockConstant(camDT);
-		problem.SetParameterBlockConstant(camDT + 2);
-		problem.SetParameterBlockConstant(camDP);
-
-		for (int tt = 0; tt < point_clouds.size(); tt++)
-		{
-			if (!poi_enable[tt])
-			{
-				problem.SetParameterBlockConstant(opt_points + tt * 3);
-			}
-		}
-
-		for (int tt = 0; tt < code_circle_serial.size() - 1; tt++)
-		{
-			if (!view_enable[tt])
-			{
-				if (tt == 0)
+				if (!Use_F)
 				{
-
-				}
-				else if (tt == 1)
-				{
-					problem.SetParameterBlockConstant(camQvec[tt].coeffs().data());
-					problem.SetParameterBlockConstant(T_sec);
+					problem_AG.SetParameterBlockConstant(camK);
 				}
 				else
 				{
-					problem.SetParameterBlockConstant(camQvec[tt].coeffs().data());
-					problem.SetParameterBlockConstant(camTvec[tt].data());
+					problem_AG.SetParameterBlockVariable(camK);
+				}
+				if (!Use_Cx_Cy)
+				{
+					problem_AG.SetParameterBlockConstant(camK + 2);
+				}
+				else
+				{
+					problem_AG.SetParameterBlockVariable(camK + 2);
+				}
+				if (!Use_shear)
+				{
+					camK[4] = 0;
+					problem_AG.SetParameterBlockConstant(camK + 4);
+				}
+				else
+				{
+					problem_AG.SetParameterBlockVariable(camK + 4);
+				}
+				for (int tt = 0; tt < Dis_K_num; tt++)
+				{
+					problem_AG.SetParameterBlockVariable(camDK + tt);
+				}
+				for (int tt = Dis_K_num; tt < 6; tt++)
+				{
+					camDK[tt] = 0;
+					problem_AG.SetParameterBlockConstant(camDK + tt);
 				}
 			}
+			ceres::Solver::Options options;
+			options.minimizer_progress_to_stdout = false;
+			options.linear_solver_type = ceres::DENSE_SCHUR;
+			options.max_num_iterations = max_iter_num;
+			options.function_tolerance = stop_value;
+			options.gradient_tolerance = stop_value;
+			options.parameter_tolerance = stop_value;
+			ceres::Solve(options, &problem_AG, summary_AG);
+			camK[1] = camK[0];
+			camTvec[1][0] = sin(T_sec[0]);
+			camTvec[1][1] = cos(T_sec[0]) * sin(T_sec[1]);
+			camTvec[1][2] = cos(T_sec[0]) * cos(T_sec[1]);
 		}
-
-		ceres::Solver::Options options;
-		options.minimizer_progress_to_stdout = false;
-		options.linear_solver_type = ceres::DENSE_SCHUR;
-		options.max_num_iterations = max_iter_num;
-		options.function_tolerance = stop_value;
-		options.gradient_tolerance = stop_value;
-		options.parameter_tolerance = stop_value;
-
-		ceres::Solve(options, &problem, summary);
-
-		camTvec[1][0] = sin(T_sec[0]);
-		camTvec[1][1] = cos(T_sec[0]) * sin(T_sec[1]);
-		camTvec[1][2] = cos(T_sec[0]) * cos(T_sec[1]);
 		for (int ii = 0; ii < point_clouds.size(); ii++)
 		{
 			point_clouds[ii].x = opt_points[ii * 3];
@@ -1245,6 +1487,10 @@ void SFM_optimize::calculate_SFM_part(std::vector<std::vector<Coded_detect_inf>>
 			std::vector<cv::Point2d> err_temp;
 			for (int qq = 0; qq < code_circle_serial[pp].size(); qq++)
 			{
+				if (!Serial_enable[pp][qq])
+				{
+					continue;
+				}
 				bool has_exist = false;
 				for (int ii = 0; ii < point_clouds.size(); ii++)
 				{
@@ -1278,237 +1524,7 @@ void SFM_optimize::calculate_SFM_part(std::vector<std::vector<Coded_detect_inf>>
 						double ud = camK[0] * xd + camK[4] * yd + camK[2];
 						double vd = camK[1] * yd + camK[3];
 						err_temp.push_back(cv::Point2d(ud - img(0), vd - img(1)));
-						has_exist = true;
-						break;
-					}
-				}
-				if (!has_exist)
-				{
-					err_temp.push_back(cv::Point2d(std::numeric_limits<double>::max(), std::numeric_limits<double>::max()));
-				}
-			}
-			Re_project_Map.push_back(err_temp);
-		}
-	}
-	else
-	{
-		for (int ii = 0; ii < point_clouds.size(); ii++)
-		{
-			opt_points[ii * 3] = point_clouds[ii].x;
-			opt_points[ii * 3 + 1] = point_clouds[ii].y;
-			opt_points[ii * 3 + 2] = point_clouds[ii].z;
-		}
 
-		ceres::Problem problem;
-		ceres::LocalParameterization* qvec_parameterization = new ceres::EigenQuaternionParameterization;
-		for (int ii = 0; ii < point_clouds.size(); ii++)
-		{
-			for (int pp = 0; pp < code_circle_serial.size(); pp++)
-			{
-				for (int qq = 0; qq < code_circle_serial[pp].size(); qq++)
-				{
-					if (code_circle_serial[pp][qq].code_num == point_clouds[ii].code)
-					{
-						if (pp == 0)
-						{
-							Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
-							ceres::CostFunction* cost_function = ProjectErrorCostFunctionPinehole_SFM_first_sameF::Create(img);
-							ceres::LossFunction* loss_function;
-							switch (Loss_type)
-							{
-							case 0:
-								loss_function = new ceres::TrivialLoss();
-								break;
-							case 1:
-								loss_function = new ceres::HuberLoss(Loss_value);
-								break;
-							case 2:
-								loss_function = new ceres::SoftLOneLoss(Loss_value);
-								break;
-							case 3:
-								loss_function = new ceres::CauchyLoss(Loss_value);
-								break;
-							case 4:
-								loss_function = new ceres::ArctanLoss(Loss_value);
-								break;
-							default:
-								loss_function = new ceres::CauchyLoss(Loss_value);
-								break;
-							}
-							problem.AddResidualBlock(cost_function, loss_function, opt_points + ii * 3, camK, camK + 2, camK + 4,
-								camDK, camDK + 1, camDK + 2, camDK + 3, camDK + 4, camDK + 5, camDP, camDT, camDT + 2);
-						}
-						else if (pp == 1)
-						{
-							Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
-							ceres::CostFunction* cost_function = ProjectErrorCostFunctionPinehole_SFM_Rtheta_sameF::Create(img);
-							ceres::LossFunction* loss_function;
-							switch (Loss_type)
-							{
-							case 0:
-								loss_function = new ceres::TrivialLoss();
-								break;
-							case 1:
-								loss_function = new ceres::HuberLoss(Loss_value);
-								break;
-							case 2:
-								loss_function = new ceres::SoftLOneLoss(Loss_value);
-								break;
-							case 3:
-								loss_function = new ceres::CauchyLoss(Loss_value);
-								break;
-							case 4:
-								loss_function = new ceres::ArctanLoss(Loss_value);
-								break;
-							default:
-								loss_function = new ceres::CauchyLoss(Loss_value);
-								break;
-							}
-							problem.AddResidualBlock(cost_function, loss_function, opt_points + ii * 3, camK, camK + 2, camK + 4,
-								camDK, camDK + 1, camDK + 2, camDK + 3, camDK + 4, camDK + 5, camDP, camDT, camDT + 2, camQvec[pp].coeffs().data(), T_sec);
-						}
-						else
-						{
-							Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
-							ceres::CostFunction* cost_function = ProjectErrorCostFunctionPinehole_SFM_sameF::Create(img);
-							ceres::LossFunction* loss_function;
-							switch (Loss_type)
-							{
-							case 0:
-								loss_function = new ceres::TrivialLoss();
-								break;
-							case 1:
-								loss_function = new ceres::HuberLoss(Loss_value);
-								break;
-							case 2:
-								loss_function = new ceres::SoftLOneLoss(Loss_value);
-								break;
-							case 3:
-								loss_function = new ceres::CauchyLoss(Loss_value);
-								break;
-							case 4:
-								loss_function = new ceres::ArctanLoss(Loss_value);
-								break;
-							default:
-								loss_function = new ceres::CauchyLoss(Loss_value);
-								break;
-							}
-							problem.AddResidualBlock(cost_function, loss_function, opt_points + ii * 3, camK, camK + 2, camK + 4,
-								camDK, camDK + 1, camDK + 2, camDK + 3, camDK + 4, camDK + 5, camDP, camDT, camDT + 2, camQvec[pp].coeffs().data(), camTvec[pp].data());
-						}
-						if (pp != 0)
-						{
-							problem.SetParameterization(camQvec[pp].coeffs().data(), qvec_parameterization);
-						}
-					}
-				}
-			}
-		}
-
-
-		problem.SetParameterBlockConstant(camK);
-		problem.SetParameterBlockConstant(camK + 2);
-		problem.SetParameterBlockConstant(camK + 4);
-		problem.SetParameterBlockConstant(camK);
-		problem.SetParameterBlockConstant(camK + 2);
-		problem.SetParameterBlockConstant(camK + 4);
-		for (int tt = 0; tt < 6; tt++)
-		{
-			problem.SetParameterBlockConstant(camDK + tt);
-		}
-		problem.SetParameterBlockConstant(camDT);
-		problem.SetParameterBlockConstant(camDT + 2);
-		problem.SetParameterBlockConstant(camDP);
-
-		for (int tt = 0; tt < point_clouds.size(); tt++)
-		{
-			if (!poi_enable[tt])
-			{
-				problem.SetParameterBlockConstant(opt_points + tt * 3);
-			}
-		}
-
-		for (int tt = 0; tt < code_circle_serial.size(); tt++)
-		{
-			if (!view_enable[tt])
-			{
-				if (tt == 0)
-				{
-
-				}
-				else if (tt == 1)
-				{
-					problem.SetParameterBlockConstant(camQvec[tt].coeffs().data());
-					problem.SetParameterBlockConstant(T_sec);
-				}
-				else
-				{
-					problem.SetParameterBlockConstant(camQvec[tt].coeffs().data());
-					problem.SetParameterBlockConstant(camTvec[tt].data());
-				}
-			}
-		}
-
-		ceres::Solver::Options options;
-		options.minimizer_progress_to_stdout = false;
-		options.linear_solver_type = ceres::DENSE_SCHUR;
-		options.max_num_iterations = max_iter_num;
-		options.function_tolerance = stop_value;
-		options.gradient_tolerance = stop_value;
-		options.parameter_tolerance = stop_value;
-		ceres::Solve(options, &problem, summary);
-
-		camK[1] = camK[0];
-		camTvec[1][0] = sin(T_sec[0]);
-		camTvec[1][1] = cos(T_sec[0]) * sin(T_sec[1]);
-		camTvec[1][2] = cos(T_sec[0]) * cos(T_sec[1]);
-		for (int ii = 0; ii < point_clouds.size(); ii++)
-		{
-			point_clouds[ii].x = opt_points[ii * 3];
-			point_clouds[ii].y = opt_points[ii * 3 + 1];
-			point_clouds[ii].z = opt_points[ii * 3 + 2];
-		}
-
-		Re_project_Map.clear();
-		double al_er = 0;
-		for (int pp = 0; pp < code_circle_serial.size(); pp++)
-		{
-			std::vector<cv::Point2d> err_temp;
-			for (int qq = 0; qq < code_circle_serial[pp].size(); qq++)
-			{
-				bool has_exist = false;
-				for (int ii = 0; ii < point_clouds.size(); ii++)
-				{
-					if (code_circle_serial[pp][qq].code_num == point_clouds[ii].code)
-					{
-						point_clouds[ii].weight++;
-						Eigen::Quaternion<double> qvec(camQvec[pp]);
-						Eigen::Matrix<double, 3, 1> tvec;
-						tvec << camTvec[pp][0], camTvec[pp][1], camTvec[pp][2];
-
-						Eigen::Vector3d obj(point_clouds.at(ii).x, point_clouds.at(ii).y, point_clouds.at(ii).z);
-						Eigen::Vector2d img(code_circle_serial[pp][qq].x, code_circle_serial[pp][qq].y);
-
-						Eigen::Matrix<double, 3, 1> obj_cam_coor = qvec.toRotationMatrix() * obj + tvec;
-
-						double a = obj_cam_coor(0) / obj_cam_coor(2);
-						double b = obj_cam_coor(1) / obj_cam_coor(2);
-						double r2 = (a * a + b * b);
-						double r4 = r2 * r2;
-						double r6 = r2 * r4;
-
-						double xd = a * (1.0 + camDK[0] * r2 + camDK[1] * r4 + camDK[2] * r6)
-							/ (1.0 + camDK[3] * r2 + camDK[4] * r4 + camDK[5] * r6)
-							+ 2.0 * camDP[0] * a * b + camDP[1] * (r2 + 2.0 * a * a)
-							+ camDT[0] * r2 + camDT[2] * r4;
-						double yd = b * (1.0 + camDK[0] * r2 + camDK[1] * r4 + camDK[2] * r6)
-							/ (1.0 + camDK[3] * r2 + camDK[4] * r4 + camDK[5] * r6)
-							+ 2.0 * camDP[1] * a * b + camDP[0] * (r2 + 2.0 * b * b)
-							+ camDT[1] * r2 + camDT[3] * r4;
-
-						double ud = camK[0] * xd + camK[4] * yd + camK[2];
-						double vd = camK[1] * yd + camK[3];
-						err_temp.push_back(cv::Point2d(ud - img(0), vd - img(1)));
 						has_exist = true;
 						break;
 					}

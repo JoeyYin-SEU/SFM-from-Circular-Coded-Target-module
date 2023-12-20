@@ -5,7 +5,7 @@
 // File: combineVectorElements.h
 //
 // MATLAB Coder version            : 5.5
-// C/C++ source code generated on  : 27-Nov-2023 10:57:33
+// C/C++ source code generated on  : 19-Dec-2023 13:39:53
 //
 
 #ifndef COMBINEVECTORELEMENTS_H
@@ -19,9 +19,14 @@
 
 // Function Declarations
 namespace coder {
+void b_combineVectorElements(const ::coder::array<boolean_T, 2U> &x,
+                             ::coder::array<int, 2U> &y);
+
 double combineVectorElements(const ::coder::array<double, 1U> &x);
 
-}
+double combineVectorElements(const ::coder::array<double, 2U> &x);
+
+} // namespace coder
 
 #endif
 //

@@ -5,7 +5,7 @@
 // File: svd1.h
 //
 // MATLAB Coder version            : 5.5
-// C/C++ source code generated on  : 27-Nov-2023 10:57:33
+// C/C++ source code generated on  : 19-Dec-2023 13:39:53
 //
 
 #ifndef SVD1_H
@@ -13,6 +13,7 @@
 
 // Include Files
 #include "rtwtypes.h"
+#include "coder_array.h"
 #include <cstddef>
 #include <cstdlib>
 
@@ -21,7 +22,10 @@ namespace coder {
 namespace internal {
 void b_svd(const double A[841], double U[841], double s[29], double V[841]);
 
-}
+void b_svd(const ::coder::array<double, 1U> &A, ::coder::array<double, 2U> &U,
+           double s_data[], int *s_size, double *V);
+
+} // namespace internal
 } // namespace coder
 
 #endif

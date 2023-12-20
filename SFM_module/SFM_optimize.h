@@ -451,34 +451,13 @@ private:
 class SFM_optimize
 {
 public:
-	static void calculate_SFM_part(std::vector<std::vector<Coded_detect_inf>> code_circle_serial,
-		std::vector<sfm_3d_group>& point_clouds,
-		std::vector<Eigen::Quaterniond>& camQvec, std::vector<Eigen::Vector3d>& camTvec
-		, std::vector<std::vector<cv::Point2d>>& Re_project_Map
-		, double*& camK, double*& camDK, double*& camDP, double*& camDT
-		, ceres::Solver::Summary* summary
-		, unsigned int max_iter_num = 1000
-		, double stop_value = 1e-9
-		, unsigned int num_threads = 1
-		, unsigned int timeout = 1e8
-		, unsigned char Loss_type = 3
-		, double Loss_value = 1
-		, unsigned int Dis_K_num = 3
-		, unsigned int Dis_P_num = 2
-		, unsigned int Dis_T_num = 0
-		, bool Fixed_all = false
-		, bool Use_F = true
-		, bool Use_Cx_Cy = true
-		, bool Use_shear = false
-		, bool Use_same_F = false
-		, double* F_range = nullptr
-		, double* C_range = nullptr);
 	static void calculate_SFM(std::vector<std::vector<Coded_detect_inf>> code_circle_serial, 
 		std::vector<sfm_3d_group> &point_clouds,
 		std::vector<Eigen::Quaterniond>& camQvec, std::vector<Eigen::Vector3d>& camTvec
 		, std::vector<std::vector<cv::Point2d>>& Re_project_Map
 		, double*& camK, double*& camDK, double*& camDP, double*& camDT
 		, ceres::Solver::Summary* summary
+		, ceres::Solver::Summary* summary_AG
 		, unsigned int max_iter_num = 1000
 		, double stop_value = 1e-9
 		, unsigned int num_threads = 1
@@ -494,7 +473,8 @@ public:
 		, bool Use_shear = false
 		, bool Use_same_F = false
 		, double* F_range = nullptr
-		, double* C_range = nullptr);
+		, double* C_range = nullptr
+		, double out_th = 10);
 	static void calculate_dual(std::vector<std::vector<Coded_detect_inf>> code_circle_serial,
 		std::vector<sfm_3d_group>& point_clouds,
 		std::vector<Eigen::Quaterniond>& camQvec, std::vector<Eigen::Vector3d>& camTvec
@@ -529,11 +509,12 @@ public:
 		, unsigned char Loss_type = 3
 		, double Loss_value = 1);
 
-	static void calculate_Circle(std::vector<sfm_3d_group> &point_clouds, std::vector<std::vector<std::vector<cv::Point>>> contour_circle_serial,
+	static void calculate_Circle(std::vector<sfm_3d_group> &point_clouds, 
+		std::vector<std::vector<std::vector<cv::Point2f>>> contour_circle_serial,
 		std::vector<std::vector<Coded_detect_inf>> code_circle_serial, std::vector<Eigen::Vector3d> &ori_serial,
 		std::vector<Eigen::Quaterniond> camQvec, std::vector<Eigen::Vector3d> camTvec
 		, double* camK, double* camDK, double* camDP, double* camDT
-		, ceres::Solver::Summary* summary
+		, std::vector<ceres::Solver::Summary>* summary
 		, unsigned int max_iter_num = 1000
 		, double stop_value = 1e-9
 		, unsigned int num_threads = 1

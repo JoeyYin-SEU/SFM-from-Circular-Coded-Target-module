@@ -5,12 +5,15 @@
 // File: imfilter.cpp
 //
 // MATLAB Coder version            : 5.5
-// C/C++ source code generated on  : 27-Nov-2023 10:57:33
+// C/C++ source code generated on  : 19-Dec-2023 13:39:53
 //
 
 // Include Files
 #include "imfilter.h"
+#include "combineVectorElements.h"
+#include "minOrMax.h"
 #include "rt_nonfinite.h"
+#include "sumprod.h"
 #include "svd.h"
 #include "coder_array.h"
 #include "libmwimfilter.h"
@@ -1554,6 +1557,1028 @@ void imfilter(::coder::array<float, 2U> &varargin_1)
       imfilter_real32(&a[0], &varargin_1[0], 2.0, &outSizeT[0], 2.0,
                       &padSizeT[0], &nonZeroKernel[0], 2.0, &conn[0], 2.0,
                       &connDimsT[0], &startT[0], 2.0, true, true);
+    }
+  }
+}
+
+//
+// Arguments    : ::coder::array<float, 2U> &varargin_1
+//                const ::coder::array<double, 2U> &varargin_2
+// Return Type  : void
+//
+void imfilter(::coder::array<float, 2U> &varargin_1,
+              const ::coder::array<double, 2U> &varargin_2)
+{
+  array<double, 2U> b;
+  array<double, 2U> hrow;
+  array<double, 2U> s;
+  array<double, 1U> nonzero_h;
+  array<float, 2U> a;
+  array<int, 2U> r2;
+  array<int, 1U> r1;
+  array<boolean_T, 2U> b_s;
+  array<boolean_T, 2U> c_x;
+  array<boolean_T, 1U> b_x;
+  array<boolean_T, 1U> r;
+  double outSizeT[2];
+  double startT[2];
+  double a__1;
+  int b_loop_ub;
+  int i1;
+  outSizeT[0] = varargin_1.size(0);
+  startT[0] = 0.0;
+  outSizeT[1] = varargin_1.size(1);
+  startT[1] = static_cast<double>(varargin_2.size(1)) -
+              std::floor((static_cast<double>(varargin_2.size(1)) + 1.0) / 2.0);
+  if ((varargin_1.size(0) != 0) && (varargin_1.size(1) != 0)) {
+    if (varargin_2.size(1) == 0) {
+      int b_startT[2];
+      int loop_ub;
+      int nv;
+      startT[0] = varargin_1.size(0);
+      startT[1] = varargin_1.size(1);
+      nv = static_cast<int>(startT[0]);
+      b_startT[0] = nv;
+      loop_ub = static_cast<int>(startT[1]);
+      varargin_1.set_size(nv, loop_ub);
+#pragma omp parallel for num_threads(32 > omp_get_max_threads()                \
+                                         ? omp_get_max_threads()               \
+                                         : 32) private(i1, b_loop_ub)
+
+      for (int i = 0; i < loop_ub; i++) {
+        b_loop_ub = b_startT[0];
+        for (i1 = 0; i1 < b_loop_ub; i1++) {
+          varargin_1[i1 + varargin_1.size(0) * i] = 0.0F;
+        }
+      }
+    } else {
+      int loop_ub;
+      int nv;
+      boolean_T tooBig;
+      if (varargin_2.size(1) >= 289) {
+        boolean_T x[2];
+        boolean_T exitg1;
+        x[0] = false;
+        x[1] = true;
+        tooBig = true;
+        nv = 0;
+        exitg1 = false;
+        while ((!exitg1) && (nv <= 1)) {
+          if (!x[nv]) {
+            tooBig = false;
+            exitg1 = true;
+          } else {
+            nv++;
+          }
+        }
+        if (tooBig) {
+          b_x.set_size(varargin_2.size(1));
+          loop_ub = varargin_2.size(1);
+          if (static_cast<int>(varargin_2.size(1) < 3200)) {
+            for (int i{0}; i < loop_ub; i++) {
+              b_x[i] = std::isinf(varargin_2[i]);
+            }
+          } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+            for (int i = 0; i < loop_ub; i++) {
+              b_x[i] = std::isinf(varargin_2[i]);
+            }
+          }
+          r.set_size(varargin_2.size(1));
+          loop_ub = varargin_2.size(1);
+          if (static_cast<int>(varargin_2.size(1) < 3200)) {
+            for (int i{0}; i < loop_ub; i++) {
+              r[i] = std::isnan(varargin_2[i]);
+            }
+          } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+            for (int i = 0; i < loop_ub; i++) {
+              r[i] = std::isnan(varargin_2[i]);
+            }
+          }
+          loop_ub = b_x.size(0);
+          if (static_cast<int>(b_x.size(0) < 3200)) {
+            for (int i{0}; i < loop_ub; i++) {
+              b_x[i] = ((!b_x[i]) && (!r[i]));
+            }
+          } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+            for (int i = 0; i < loop_ub; i++) {
+              b_x[i] = ((!b_x[i]) && (!r[i]));
+            }
+          }
+          tooBig = true;
+          nv = 1;
+          exitg1 = false;
+          while ((!exitg1) && (nv <= b_x.size(0))) {
+            if (!b_x[nv - 1]) {
+              tooBig = false;
+              exitg1 = true;
+            } else {
+              nv++;
+            }
+          }
+          if (tooBig) {
+            svd(varargin_2, &a__1, hrow, s);
+            nv = hrow.size(1);
+            s.set_size(hrow.size(1), hrow.size(1));
+            loop_ub = hrow.size(1) * hrow.size(1);
+            if (static_cast<int>(loop_ub < 3200)) {
+              for (int i{0}; i < loop_ub; i++) {
+                s[i] = 0.0;
+              }
+            } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+              for (int i = 0; i < loop_ub; i++) {
+                s[i] = 0.0;
+              }
+            }
+            for (loop_ub = 0; loop_ub < nv; loop_ub++) {
+              s[loop_ub + s.size(0) * loop_ub] = hrow[loop_ub];
+            }
+            internal::maximum(s, hrow);
+            if (s.size(1) == hrow.size(1)) {
+              nv = varargin_2.size(1);
+              b_s.set_size(s.size(0), s.size(1));
+              loop_ub = s.size(1);
+#pragma omp parallel for num_threads(32 > omp_get_max_threads()                \
+                                         ? omp_get_max_threads()               \
+                                         : 32) private(i1, b_loop_ub)
+
+              for (int i = 0; i < loop_ub; i++) {
+                b_loop_ub = s.size(0);
+                for (i1 = 0; i1 < b_loop_ub; i1++) {
+                  b_s[i1 + b_s.size(0) * i] =
+                      (s[i1 + s.size(0) * i] > static_cast<double>(nv) *
+                                                   hrow[i] *
+                                                   2.2204460492503131E-16);
+                }
+              }
+              b_combineVectorElements(b_s, r2);
+            } else {
+              binary_expand_op(r2, s, varargin_2, hrow);
+            }
+            c_x.set_size(1, r2.size(1));
+            loop_ub = r2.size(1);
+            if (static_cast<int>(r2.size(1) < 3200)) {
+              for (int i{0}; i < loop_ub; i++) {
+                c_x[i] = (r2[i] == 1);
+              }
+            } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+              for (int i = 0; i < loop_ub; i++) {
+                c_x[i] = (r2[i] == 1);
+              }
+            }
+            tooBig = (c_x.size(1) != 0);
+            if (tooBig) {
+              nv = 0;
+              exitg1 = false;
+              while ((!exitg1) && (nv <= c_x.size(1) - 1)) {
+                if (!c_x[nv]) {
+                  tooBig = false;
+                  exitg1 = true;
+                } else {
+                  nv++;
+                }
+              }
+            }
+          } else {
+            tooBig = false;
+          }
+        } else {
+          tooBig = false;
+        }
+      } else {
+        tooBig = false;
+      }
+      if (tooBig) {
+        double connDimsT[2];
+        double out_size_row[2];
+        double padSizeT[2];
+        double start[2];
+        double nonzero_h_data;
+        boolean_T conn;
+        b_padImage(varargin_1, startT, a);
+        svd(varargin_2, &a__1, hrow, b);
+        nv = hrow.size(1);
+        s.set_size(hrow.size(1), hrow.size(1));
+        loop_ub = hrow.size(1) * hrow.size(1);
+        if (static_cast<int>(loop_ub < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            s[i] = 0.0;
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            s[i] = 0.0;
+          }
+        }
+        for (loop_ub = 0; loop_ub < nv; loop_ub++) {
+          s[loop_ub + s.size(0) * loop_ub] = hrow[loop_ub];
+        }
+        nonzero_h_data = a__1 * std::sqrt(s[0]);
+        a__1 = std::sqrt(s[0]);
+        hrow.set_size(1, b.size(0));
+        loop_ub = b.size(0);
+        if (static_cast<int>(b.size(0) < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            hrow[i] = b[i] * a__1;
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            hrow[i] = b[i] * a__1;
+          }
+        }
+        s.set_size(a.size(0), a.size(1));
+        loop_ub = a.size(0) * a.size(1);
+        if (static_cast<int>(loop_ub < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            s[i] = a[i];
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            s[i] = a[i];
+          }
+        }
+        out_size_row[0] = s.size(0);
+        out_size_row[1] = varargin_1.size(1);
+        start[0] = 0.0;
+        start[1] = startT[1];
+        r.set_size(hrow.size(1));
+        loop_ub = hrow.size(1);
+        if (static_cast<int>(hrow.size(1) < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            r[i] = (hrow[i] != 0.0);
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            r[i] = (hrow[i] != 0.0);
+          }
+        }
+        loop_ub = r.size(0) - 1;
+        nv = 0;
+        for (int b_i{0}; b_i <= loop_ub; b_i++) {
+          if (r[b_i]) {
+            nv++;
+          }
+        }
+        r1.set_size(nv);
+        nv = 0;
+        for (int b_i{0}; b_i <= loop_ub; b_i++) {
+          if (r[b_i]) {
+            r1[nv] = b_i + 1;
+            nv++;
+          }
+        }
+        nonzero_h.set_size(r1.size(0));
+        loop_ub = r1.size(0);
+        if (static_cast<int>(r1.size(0) < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            nonzero_h[i] = hrow[r1[i] - 1];
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            nonzero_h[i] = hrow[r1[i] - 1];
+          }
+        }
+        c_x.set_size(1, hrow.size(1));
+        loop_ub = hrow.size(1);
+        if (static_cast<int>(hrow.size(1) < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            c_x[i] = (hrow[i] != 0.0);
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            c_x[i] = (hrow[i] != 0.0);
+          }
+        }
+        tooBig = true;
+        if ((out_size_row[0] <= 65500.0) || (!(out_size_row[1] > 65500.0))) {
+          tooBig = false;
+        }
+        if ((static_cast<double>(r1.size(0)) /
+                 static_cast<double>(hrow.size(1)) >
+             0.05) &&
+            (!tooBig)) {
+          tooBig = true;
+        } else {
+          tooBig = false;
+        }
+        b.set_size(static_cast<int>(out_size_row[0]),
+                   static_cast<int>(out_size_row[1]));
+        if (tooBig) {
+          padSizeT[0] = s.size(0);
+          startT[0] = 1.0;
+          padSizeT[1] = s.size(1);
+          startT[1] = hrow.size(1);
+          ippfilter_real64(&s[0], &b[0], &out_size_row[0], 2.0, &padSizeT[0],
+                           &hrow[0], &startT[0], true);
+        } else {
+          padSizeT[0] = s.size(0);
+          connDimsT[0] = 1.0;
+          padSizeT[1] = s.size(1);
+          connDimsT[1] = c_x.size(1);
+          imfilter_real64(&s[0], &b[0], 2.0, &out_size_row[0], 2.0,
+                          &padSizeT[0], &(nonzero_h.data())[0],
+                          static_cast<double>(r1.size(0)), &c_x[0], 2.0,
+                          &connDimsT[0], &start[0], 2.0, true, true);
+        }
+        conn = (nonzero_h_data != 0.0);
+        nv = 0;
+        if (conn) {
+          nv = 1;
+        }
+        tooBig = true;
+        if ((outSizeT[0] <= 65500.0) || (!(outSizeT[1] > 65500.0))) {
+          tooBig = false;
+        }
+        if ((nv > 0.05) && (!tooBig)) {
+          tooBig = true;
+        } else {
+          tooBig = false;
+        }
+        s.set_size(b.size(0), b.size(1));
+        loop_ub = b.size(0) * b.size(1);
+        if (static_cast<int>(loop_ub < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            s[i] = b[i];
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            s[i] = b[i];
+          }
+        }
+        b.set_size(static_cast<int>(outSizeT[0]),
+                   static_cast<int>(outSizeT[1]));
+        if (tooBig) {
+          padSizeT[0] = s.size(0);
+          startT[0] = 1.0;
+          padSizeT[1] = s.size(1);
+          startT[1] = 1.0;
+          ippfilter_real64(&s[0], &b[0], &outSizeT[0], 2.0, &padSizeT[0],
+                           &nonzero_h_data, &startT[0], true);
+        } else {
+          padSizeT[0] = s.size(0);
+          connDimsT[0] = 1.0;
+          startT[0] = 0.0;
+          padSizeT[1] = s.size(1);
+          connDimsT[1] = 1.0;
+          startT[1] = 0.0;
+          imfilter_real64(&s[0], &b[0], 2.0, &outSizeT[0], 2.0, &padSizeT[0],
+                          &nonzero_h_data, static_cast<double>(nv), &conn, 2.0,
+                          &connDimsT[0], &startT[0], 2.0, true, true);
+        }
+        varargin_1.set_size(b.size(0), b.size(1));
+        loop_ub = b.size(1);
+#pragma omp parallel for num_threads(32 > omp_get_max_threads()                \
+                                         ? omp_get_max_threads()               \
+                                         : 32) private(i1, b_loop_ub)
+
+        for (int i = 0; i < loop_ub; i++) {
+          b_loop_ub = b.size(0);
+          for (i1 = 0; i1 < b_loop_ub; i1++) {
+            varargin_1[i1 + varargin_1.size(0) * i] =
+                static_cast<float>(b[i1 + b.size(0) * i]);
+          }
+        }
+      } else {
+        b_padImage(varargin_1, startT, a);
+        r.set_size(varargin_2.size(1));
+        loop_ub = varargin_2.size(1);
+        if (static_cast<int>(varargin_2.size(1) < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            r[i] = (varargin_2[i] != 0.0);
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            r[i] = (varargin_2[i] != 0.0);
+          }
+        }
+        loop_ub = r.size(0) - 1;
+        nv = 0;
+        for (int b_i{0}; b_i <= loop_ub; b_i++) {
+          if (r[b_i]) {
+            nv++;
+          }
+        }
+        r1.set_size(nv);
+        nv = 0;
+        for (int b_i{0}; b_i <= loop_ub; b_i++) {
+          if (r[b_i]) {
+            r1[nv] = b_i + 1;
+            nv++;
+          }
+        }
+        nonzero_h.set_size(r1.size(0));
+        loop_ub = r1.size(0);
+        if (static_cast<int>(r1.size(0) < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            nonzero_h[i] = varargin_2[r1[i] - 1];
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            nonzero_h[i] = varargin_2[r1[i] - 1];
+          }
+        }
+        c_x.set_size(1, varargin_2.size(1));
+        loop_ub = varargin_2.size(1);
+        if (static_cast<int>(varargin_2.size(1) < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            c_x[i] = (varargin_2[i] != 0.0);
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            c_x[i] = (varargin_2[i] != 0.0);
+          }
+        }
+        tooBig = true;
+        if ((outSizeT[0] <= 65500.0) || (!(outSizeT[1] > 65500.0))) {
+          tooBig = false;
+        }
+        if ((static_cast<double>(r1.size(0)) /
+                 static_cast<double>(varargin_2.size(1)) >
+             0.05) &&
+            (!tooBig)) {
+          tooBig = true;
+        } else {
+          tooBig = false;
+        }
+        varargin_1.set_size(static_cast<int>(outSizeT[0]),
+                            static_cast<int>(outSizeT[1]));
+        if (tooBig) {
+          double padSizeT[2];
+          padSizeT[0] = a.size(0);
+          startT[0] = 1.0;
+          padSizeT[1] = a.size(1);
+          startT[1] = varargin_2.size(1);
+          ippfilter_real32(&a[0], &varargin_1[0], &outSizeT[0], 2.0,
+                           &padSizeT[0], &varargin_2[0], &startT[0], true);
+        } else {
+          double connDimsT[2];
+          double padSizeT[2];
+          padSizeT[0] = a.size(0);
+          connDimsT[0] = 1.0;
+          padSizeT[1] = a.size(1);
+          connDimsT[1] = c_x.size(1);
+          imfilter_real32(&a[0], &varargin_1[0], 2.0, &outSizeT[0], 2.0,
+                          &padSizeT[0], &(nonzero_h.data())[0],
+                          static_cast<double>(r1.size(0)), &c_x[0], 2.0,
+                          &connDimsT[0], &startT[0], 2.0, true, true);
+        }
+      }
+    }
+  }
+}
+
+//
+// Arguments    : ::coder::array<float, 2U> &varargin_1
+//                const ::coder::array<double, 1U> &varargin_2
+// Return Type  : void
+//
+void imfilter(::coder::array<float, 2U> &varargin_1,
+              const ::coder::array<double, 1U> &varargin_2)
+{
+  array<double, 2U> b;
+  array<double, 2U> b_s;
+  array<double, 2U> r1;
+  array<double, 1U> hcol;
+  array<double, 1U> s;
+  array<float, 2U> a;
+  array<int, 2U> r2;
+  array<int, 1U> r;
+  array<boolean_T, 2U> c_s;
+  array<boolean_T, 2U> c_x;
+  array<boolean_T, 1U> b_x;
+  array<boolean_T, 1U> connb;
+  double outSizeT[2];
+  double startT[2];
+  double nonzero_h_data;
+  int b_loop_ub;
+  int i1;
+  outSizeT[0] = varargin_1.size(0);
+  startT[0] = static_cast<double>(varargin_2.size(0)) -
+              std::floor((static_cast<double>(varargin_2.size(0)) + 1.0) / 2.0);
+  outSizeT[1] = varargin_1.size(1);
+  startT[1] = 0.0;
+  if ((varargin_1.size(0) != 0) && (varargin_1.size(1) != 0)) {
+    if (varargin_2.size(0) == 0) {
+      double kernelSizeT[2];
+      int b_kernelSizeT[2];
+      int loop_ub;
+      int nv;
+      kernelSizeT[0] = varargin_1.size(0);
+      kernelSizeT[1] = varargin_1.size(1);
+      nv = static_cast<int>(kernelSizeT[0]);
+      b_kernelSizeT[0] = nv;
+      loop_ub = static_cast<int>(kernelSizeT[1]);
+      varargin_1.set_size(nv, loop_ub);
+#pragma omp parallel for num_threads(32 > omp_get_max_threads()                \
+                                         ? omp_get_max_threads()               \
+                                         : 32) private(i1, b_loop_ub)
+
+      for (int i = 0; i < loop_ub; i++) {
+        b_loop_ub = b_kernelSizeT[0];
+        for (i1 = 0; i1 < b_loop_ub; i1++) {
+          varargin_1[i1 + varargin_1.size(0) * i] = 0.0F;
+        }
+      }
+    } else {
+      int loop_ub;
+      int nv;
+      boolean_T tooBig;
+      if (varargin_2.size(0) >= 289) {
+        boolean_T x[2];
+        boolean_T exitg1;
+        x[0] = true;
+        x[1] = false;
+        tooBig = true;
+        nv = 0;
+        exitg1 = false;
+        while ((!exitg1) && (nv <= 1)) {
+          if (!x[nv]) {
+            tooBig = false;
+            exitg1 = true;
+          } else {
+            nv++;
+          }
+        }
+        if (tooBig) {
+          b_x.set_size(varargin_2.size(0));
+          loop_ub = varargin_2.size(0);
+          if (static_cast<int>(varargin_2.size(0) < 3200)) {
+            for (int i{0}; i < loop_ub; i++) {
+              b_x[i] = std::isinf(varargin_2[i]);
+            }
+          } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+            for (int i = 0; i < loop_ub; i++) {
+              b_x[i] = std::isinf(varargin_2[i]);
+            }
+          }
+          connb.set_size(varargin_2.size(0));
+          loop_ub = varargin_2.size(0);
+          if (static_cast<int>(varargin_2.size(0) < 3200)) {
+            for (int i{0}; i < loop_ub; i++) {
+              connb[i] = std::isnan(varargin_2[i]);
+            }
+          } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+            for (int i = 0; i < loop_ub; i++) {
+              connb[i] = std::isnan(varargin_2[i]);
+            }
+          }
+          loop_ub = b_x.size(0);
+          if (static_cast<int>(b_x.size(0) < 3200)) {
+            for (int i{0}; i < loop_ub; i++) {
+              b_x[i] = ((!b_x[i]) && (!connb[i]));
+            }
+          } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+            for (int i = 0; i < loop_ub; i++) {
+              b_x[i] = ((!b_x[i]) && (!connb[i]));
+            }
+          }
+          tooBig = true;
+          nv = 1;
+          exitg1 = false;
+          while ((!exitg1) && (nv <= b_x.size(0))) {
+            if (!b_x[nv - 1]) {
+              tooBig = false;
+              exitg1 = true;
+            } else {
+              nv++;
+            }
+          }
+          if (tooBig) {
+            svd(varargin_2, b_s, s, &nonzero_h_data);
+            nv = s.size(0);
+            b_s.set_size(s.size(0), s.size(0));
+            loop_ub = s.size(0) * s.size(0);
+            if (static_cast<int>(loop_ub < 3200)) {
+              for (int i{0}; i < loop_ub; i++) {
+                b_s[i] = 0.0;
+              }
+            } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+              for (int i = 0; i < loop_ub; i++) {
+                b_s[i] = 0.0;
+              }
+            }
+            for (loop_ub = 0; loop_ub < nv; loop_ub++) {
+              b_s[loop_ub + b_s.size(0) * loop_ub] = s[loop_ub];
+            }
+            internal::maximum(b_s, r1);
+            if (b_s.size(1) == r1.size(1)) {
+              nv = varargin_2.size(0);
+              c_s.set_size(b_s.size(0), b_s.size(1));
+              loop_ub = b_s.size(1);
+#pragma omp parallel for num_threads(32 > omp_get_max_threads()                \
+                                         ? omp_get_max_threads()               \
+                                         : 32) private(i1, b_loop_ub)
+
+              for (int i = 0; i < loop_ub; i++) {
+                b_loop_ub = b_s.size(0);
+                for (i1 = 0; i1 < b_loop_ub; i1++) {
+                  c_s[i1 + c_s.size(0) * i] = (b_s[i1 + b_s.size(0) * i] >
+                                               static_cast<double>(nv) * r1[i] *
+                                                   2.2204460492503131E-16);
+                }
+              }
+              b_combineVectorElements(c_s, r2);
+            } else {
+              binary_expand_op(r2, b_s, varargin_2, r1);
+            }
+            c_x.set_size(1, r2.size(1));
+            loop_ub = r2.size(1);
+            if (static_cast<int>(r2.size(1) < 3200)) {
+              for (int i{0}; i < loop_ub; i++) {
+                c_x[i] = (r2[i] == 1);
+              }
+            } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+              for (int i = 0; i < loop_ub; i++) {
+                c_x[i] = (r2[i] == 1);
+              }
+            }
+            tooBig = (c_x.size(1) != 0);
+            if (tooBig) {
+              nv = 0;
+              exitg1 = false;
+              while ((!exitg1) && (nv <= c_x.size(1) - 1)) {
+                if (!c_x[nv]) {
+                  tooBig = false;
+                  exitg1 = true;
+                } else {
+                  nv++;
+                }
+              }
+            }
+          } else {
+            tooBig = false;
+          }
+        } else {
+          tooBig = false;
+        }
+      } else {
+        tooBig = false;
+      }
+      if (tooBig) {
+        double connDimsT[2];
+        double kernelSizeT[2];
+        double out_size_row[2];
+        double padSizeT[2];
+        double b_b;
+        boolean_T conn;
+        b_padImage(varargin_1, startT, a);
+        svd(varargin_2, b, s, &nonzero_h_data);
+        nv = s.size(0);
+        b_s.set_size(s.size(0), s.size(0));
+        loop_ub = s.size(0) * s.size(0);
+        if (static_cast<int>(loop_ub < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            b_s[i] = 0.0;
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            b_s[i] = 0.0;
+          }
+        }
+        for (loop_ub = 0; loop_ub < nv; loop_ub++) {
+          b_s[loop_ub + b_s.size(0) * loop_ub] = s[loop_ub];
+        }
+        b_b = std::sqrt(b_s[0]);
+        hcol.set_size(b.size(0));
+        loop_ub = b.size(0);
+        if (static_cast<int>(b.size(0) < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            hcol[i] = b[i] * b_b;
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            hcol[i] = b[i] * b_b;
+          }
+        }
+        nonzero_h_data *= std::sqrt(b_s[0]);
+        b_s.set_size(a.size(0), a.size(1));
+        loop_ub = a.size(0) * a.size(1);
+        if (static_cast<int>(loop_ub < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            b_s[i] = a[i];
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            b_s[i] = a[i];
+          }
+        }
+        out_size_row[0] = b_s.size(0);
+        out_size_row[1] = varargin_1.size(1);
+        conn = (nonzero_h_data != 0.0);
+        nv = 0;
+        if (conn) {
+          nv = 1;
+        }
+        tooBig = true;
+        if ((b_s.size(0) <= 65500) || (!(out_size_row[1] > 65500.0))) {
+          tooBig = false;
+        }
+        if ((nv > 0.05) && (!tooBig)) {
+          tooBig = true;
+        } else {
+          tooBig = false;
+        }
+        b.set_size(b_s.size(0), static_cast<int>(out_size_row[1]));
+        if (tooBig) {
+          padSizeT[0] = b_s.size(0);
+          kernelSizeT[0] = 1.0;
+          padSizeT[1] = b_s.size(1);
+          kernelSizeT[1] = 1.0;
+          ippfilter_real64(&b_s[0], &b[0], &out_size_row[0], 2.0, &padSizeT[0],
+                           &nonzero_h_data, &kernelSizeT[0], true);
+        } else {
+          padSizeT[0] = b_s.size(0);
+          connDimsT[0] = 1.0;
+          kernelSizeT[0] = 0.0;
+          padSizeT[1] = b_s.size(1);
+          connDimsT[1] = 1.0;
+          kernelSizeT[1] = 0.0;
+          imfilter_real64(&b_s[0], &b[0], 2.0, &out_size_row[0], 2.0,
+                          &padSizeT[0], &nonzero_h_data,
+                          static_cast<double>(nv), &conn, 2.0, &connDimsT[0],
+                          &kernelSizeT[0], 2.0, true, true);
+        }
+        kernelSizeT[0] = startT[0];
+        kernelSizeT[1] = 0.0;
+        connb.set_size(hcol.size(0));
+        loop_ub = hcol.size(0);
+        if (static_cast<int>(hcol.size(0) < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            connb[i] = (hcol[i] != 0.0);
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            connb[i] = (hcol[i] != 0.0);
+          }
+        }
+        loop_ub = connb.size(0) - 1;
+        nv = 0;
+        for (int b_i{0}; b_i <= loop_ub; b_i++) {
+          if (connb[b_i]) {
+            nv++;
+          }
+        }
+        r.set_size(nv);
+        nv = 0;
+        for (int b_i{0}; b_i <= loop_ub; b_i++) {
+          if (connb[b_i]) {
+            r[nv] = b_i + 1;
+            nv++;
+          }
+        }
+        s.set_size(r.size(0));
+        loop_ub = r.size(0);
+        if (static_cast<int>(r.size(0) < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            s[i] = hcol[r[i] - 1];
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            s[i] = hcol[r[i] - 1];
+          }
+        }
+        connb.set_size(hcol.size(0));
+        loop_ub = hcol.size(0);
+        if (static_cast<int>(hcol.size(0) < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            connb[i] = (hcol[i] != 0.0);
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            connb[i] = (hcol[i] != 0.0);
+          }
+        }
+        tooBig = true;
+        if ((outSizeT[0] <= 65500.0) || (!(outSizeT[1] > 65500.0))) {
+          tooBig = false;
+        }
+        if ((static_cast<double>(r.size(0)) /
+                 static_cast<double>(hcol.size(0)) >
+             0.05) &&
+            (!tooBig)) {
+          tooBig = true;
+        } else {
+          tooBig = false;
+        }
+        b_s.set_size(b.size(0), b.size(1));
+        loop_ub = b.size(0) * b.size(1);
+        if (static_cast<int>(loop_ub < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            b_s[i] = b[i];
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            b_s[i] = b[i];
+          }
+        }
+        b.set_size(static_cast<int>(outSizeT[0]),
+                   static_cast<int>(outSizeT[1]));
+        if (tooBig) {
+          padSizeT[0] = b_s.size(0);
+          padSizeT[1] = b_s.size(1);
+          kernelSizeT[0] = hcol.size(0);
+          kernelSizeT[1] = 1.0;
+          ippfilter_real64(&b_s[0], &b[0], &outSizeT[0], 2.0, &padSizeT[0],
+                           &(hcol.data())[0], &kernelSizeT[0], true);
+        } else {
+          padSizeT[0] = b_s.size(0);
+          padSizeT[1] = b_s.size(1);
+          connDimsT[0] = connb.size(0);
+          connDimsT[1] = 1.0;
+          imfilter_real64(&b_s[0], &b[0], 2.0, &outSizeT[0], 2.0, &padSizeT[0],
+                          &(s.data())[0], static_cast<double>(r.size(0)),
+                          &(connb.data())[0], 2.0, &connDimsT[0],
+                          &kernelSizeT[0], 2.0, true, true);
+        }
+        varargin_1.set_size(b.size(0), b.size(1));
+        loop_ub = b.size(1);
+#pragma omp parallel for num_threads(32 > omp_get_max_threads()                \
+                                         ? omp_get_max_threads()               \
+                                         : 32) private(i1, b_loop_ub)
+
+        for (int i = 0; i < loop_ub; i++) {
+          b_loop_ub = b.size(0);
+          for (i1 = 0; i1 < b_loop_ub; i1++) {
+            varargin_1[i1 + varargin_1.size(0) * i] =
+                static_cast<float>(b[i1 + b.size(0) * i]);
+          }
+        }
+      } else {
+        b_padImage(varargin_1, startT, a);
+        connb.set_size(varargin_2.size(0));
+        loop_ub = varargin_2.size(0);
+        if (static_cast<int>(varargin_2.size(0) < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            connb[i] = (varargin_2[i] != 0.0);
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            connb[i] = (varargin_2[i] != 0.0);
+          }
+        }
+        loop_ub = connb.size(0) - 1;
+        nv = 0;
+        for (int b_i{0}; b_i <= loop_ub; b_i++) {
+          if (connb[b_i]) {
+            nv++;
+          }
+        }
+        r.set_size(nv);
+        nv = 0;
+        for (int b_i{0}; b_i <= loop_ub; b_i++) {
+          if (connb[b_i]) {
+            r[nv] = b_i + 1;
+            nv++;
+          }
+        }
+        s.set_size(r.size(0));
+        loop_ub = r.size(0);
+        if (static_cast<int>(r.size(0) < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            s[i] = varargin_2[r[i] - 1];
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            s[i] = varargin_2[r[i] - 1];
+          }
+        }
+        connb.set_size(varargin_2.size(0));
+        loop_ub = varargin_2.size(0);
+        if (static_cast<int>(varargin_2.size(0) < 3200)) {
+          for (int i{0}; i < loop_ub; i++) {
+            connb[i] = (varargin_2[i] != 0.0);
+          }
+        } else {
+#pragma omp parallel for num_threads(                                          \
+    32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+          for (int i = 0; i < loop_ub; i++) {
+            connb[i] = (varargin_2[i] != 0.0);
+          }
+        }
+        tooBig = true;
+        if ((outSizeT[0] <= 65500.0) || (!(outSizeT[1] > 65500.0))) {
+          tooBig = false;
+        }
+        if ((static_cast<double>(r.size(0)) /
+                 static_cast<double>(varargin_2.size(0)) >
+             0.05) &&
+            (!tooBig)) {
+          tooBig = true;
+        } else {
+          tooBig = false;
+        }
+        varargin_1.set_size(static_cast<int>(outSizeT[0]),
+                            static_cast<int>(outSizeT[1]));
+        if (tooBig) {
+          double kernelSizeT[2];
+          double padSizeT[2];
+          padSizeT[0] = a.size(0);
+          padSizeT[1] = a.size(1);
+          kernelSizeT[0] = varargin_2.size(0);
+          kernelSizeT[1] = 1.0;
+          ippfilter_real32(
+              &a[0], &varargin_1[0], &outSizeT[0], 2.0, &padSizeT[0],
+              &(((::coder::array<double, 1U> *)&varargin_2)->data())[0],
+              &kernelSizeT[0], true);
+        } else {
+          double connDimsT[2];
+          double padSizeT[2];
+          padSizeT[0] = a.size(0);
+          padSizeT[1] = a.size(1);
+          connDimsT[0] = connb.size(0);
+          connDimsT[1] = 1.0;
+          imfilter_real32(&a[0], &varargin_1[0], 2.0, &outSizeT[0], 2.0,
+                          &padSizeT[0], &(s.data())[0],
+                          static_cast<double>(r.size(0)), &(connb.data())[0],
+                          2.0, &connDimsT[0], &startT[0], 2.0, true, true);
+        }
+      }
     }
   }
 }

@@ -5,7 +5,7 @@
 // File: imfilter.h
 //
 // MATLAB Coder version            : 5.5
-// C/C++ source code generated on  : 27-Nov-2023 10:57:33
+// C/C++ source code generated on  : 19-Dec-2023 13:39:53
 //
 
 #ifndef IMFILTER_H
@@ -35,6 +35,12 @@ void imfilter(::coder::array<float, 2U> &varargin_1,
               const double varargin_2[25]);
 
 void imfilter(::coder::array<float, 2U> &varargin_1);
+
+void imfilter(::coder::array<float, 2U> &varargin_1,
+              const ::coder::array<double, 2U> &varargin_2);
+
+void imfilter(::coder::array<float, 2U> &varargin_1,
+              const ::coder::array<double, 1U> &varargin_2);
 
 } // namespace coder
 

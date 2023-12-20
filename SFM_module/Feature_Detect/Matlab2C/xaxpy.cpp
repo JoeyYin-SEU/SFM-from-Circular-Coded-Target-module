@@ -5,12 +5,13 @@
 // File: xaxpy.cpp
 //
 // MATLAB Coder version            : 5.5
-// C/C++ source code generated on  : 27-Nov-2023 10:57:33
+// C/C++ source code generated on  : 19-Dec-2023 13:39:53
 //
 
 // Include Files
 #include "xaxpy.h"
 #include "rt_nonfinite.h"
+#include "coder_array.h"
 #include "omp.h"
 
 // Function Definitions
@@ -93,6 +94,26 @@ void xaxpy(int n, double a, int ix0, double y[841], int iy0)
       int i1;
       i1 = (iy0 + k) - 1;
       y[i1] += a * y[(ix0 + k) - 1];
+    }
+  }
+}
+
+//
+// Arguments    : int n
+//                double a
+//                ::coder::array<double, 2U> &y
+//                int iy0
+// Return Type  : void
+//
+void xaxpy(int n, double a, ::coder::array<double, 2U> &y, int iy0)
+{
+  if ((n >= 1) && (!(a == 0.0))) {
+    int i;
+    i = n - 1;
+    for (int k{0}; k <= i; k++) {
+      int i1;
+      i1 = (iy0 + k) - 1;
+      y[i1] = y[i1] + a * y[k + 1];
     }
   }
 }

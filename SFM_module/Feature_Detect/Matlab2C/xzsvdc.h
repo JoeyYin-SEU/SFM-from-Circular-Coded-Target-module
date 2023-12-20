@@ -2,30 +2,35 @@
 // Academic License - for use in teaching, academic research, and meeting
 // course requirements at degree granting institutions only.  Not for
 // government, commercial, or other organizational use.
-// File: get_chessborad_pixel_data.h
+// File: xzsvdc.h
 //
 // MATLAB Coder version            : 5.5
 // C/C++ source code generated on  : 19-Dec-2023 13:39:53
 //
 
-#ifndef GET_CHESSBORAD_PIXEL_DATA_H
-#define GET_CHESSBORAD_PIXEL_DATA_H
+#ifndef XZSVDC_H
+#define XZSVDC_H
 
 // Include Files
 #include "rtwtypes.h"
-#include "omp.h"
+#include "coder_array.h"
 #include <cstddef>
 #include <cstdlib>
 
-// Variable Declarations
-extern boolean_T halideInit_not_empty;
-extern omp_nest_lock_t get_chessborad_pixel_nestLockGlobal;
-extern const boolean_T bv[9];
-extern boolean_T isInitialized_get_chessborad_pixel;
+// Function Declarations
+namespace coder {
+namespace internal {
+namespace reflapack {
+void xzsvdc(const ::coder::array<double, 2U> &A, double *U, double S_data[],
+            int *S_size, ::coder::array<double, 2U> &V);
+
+}
+} // namespace internal
+} // namespace coder
 
 #endif
 //
-// File trailer for get_chessborad_pixel_data.h
+// File trailer for xzsvdc.h
 //
 // [EOF]
 //

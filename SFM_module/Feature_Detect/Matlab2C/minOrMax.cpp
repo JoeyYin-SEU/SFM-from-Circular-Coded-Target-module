@@ -5,13 +5,14 @@
 // File: minOrMax.cpp
 //
 // MATLAB Coder version            : 5.5
-// C/C++ source code generated on  : 27-Nov-2023 10:57:33
+// C/C++ source code generated on  : 19-Dec-2023 13:39:53
 //
 
 // Include Files
 #include "minOrMax.h"
 #include "rt_nonfinite.h"
 #include "coder_array.h"
+#include "omp.h"
 #include <cmath>
 
 // Function Definitions
@@ -110,6 +111,68 @@ double maximum(const ::coder::array<double, 1U> &x)
     }
   }
   return ex;
+}
+
+//
+// Arguments    : const ::coder::array<double, 2U> &x
+//                ::coder::array<double, 2U> &ex
+// Return Type  : void
+//
+void maximum(const ::coder::array<double, 2U> &x,
+             ::coder::array<double, 2U> &ex)
+{
+  double a;
+  double b;
+  int i;
+  int m;
+  int n;
+  boolean_T p;
+  m = x.size(0);
+  n = x.size(1);
+  ex.set_size(1, x.size(1));
+  if (x.size(1) >= 1) {
+    if (static_cast<int>(x.size(1) * (x.size(0) - 1) < 3200)) {
+      for (int j{0}; j < n; j++) {
+        ex[j] = x[x.size(0) * j];
+        for (i = 2; i <= m; i++) {
+          a = ex[j];
+          b = x[(i + x.size(0) * j) - 1];
+          if (std::isnan(b)) {
+            p = false;
+          } else if (std::isnan(a)) {
+            p = true;
+          } else {
+            p = (a < b);
+          }
+          if (p) {
+            ex[j] = b;
+          }
+        }
+      }
+    } else {
+#pragma omp parallel for num_threads(32 > omp_get_max_threads()                \
+                                         ? omp_get_max_threads()               \
+                                         : 32) private(p, b, a, i)
+
+      for (int j = 0; j < n; j++) {
+        ex[j] = x[x.size(0) * j];
+        for (i = 2; i <= m; i++) {
+          a = ex[j];
+          b = x[(i + x.size(0) * j) - 1];
+          if (std::isnan(b)) {
+            p = false;
+          } else if (std::isnan(a)) {
+            p = true;
+          } else {
+            p = (a < b);
+          }
+          if (p) {
+            ex[j] = b;
+          }
+        }
+      }
+    }
+  }
 }
 
 //

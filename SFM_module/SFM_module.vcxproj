@@ -59,8 +59,8 @@
     <LibraryPath>C:\Build\Lib\Opencv\x64\vc17\lib;C:\Build\Lib\ceres-solver-2.1.0\lib;C:\Build\Lib\gflags-2.2.2\lib;C:\Build\Lib\glog-0.6.0\lib;C:\Program Files\MATLAB\R2022b\extern\lib\win64\microsoft;C:\Build\Lib\VTK-9.2.6\Release\lib;C:\Build\PCL 1.13.1\lib;C:\Build\PCL 1.13.1\3rdParty\Boost\lib;C:\Build\PCL 1.13.1\3rdParty\FLANN\lib;C:\Build\PCL 1.13.1\3rdParty\Qhull\lib;C:\Program Files\OpenNI2\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <IncludePath>C:\Build\Lib\Opencv\include;C:\Build\Lib\Opencv\include\opencv2;C:\Build\Lib\ceres-solver-2.1.0\include;C:\Build\Lib\eigen-3.4.0\include\eigen3;C:\Build\Lib\eigen-3.4.0\include\eigen3\Eigen;C:\Build\Lib\glog-0.6.0\include;C:\Build\Lib\gflags-2.2.2\include;C:\Program Files\MATLAB\R2022b\extern\include;C:\Build\Lib\VTK-9.2.6\Release\include\vtk-9.2;C:\Build\PCL 1.13.1\include\pcl-1.13;C:\Build\PCL 1.13.1\3rdParty\Boost\include\boost-1_82;C:\Build\PCL 1.13.1\3rdParty\FLANN\include;C:\Build\PCL 1.13.1\3rdParty\Qhull\include;C:\Program Files\OpenNI2\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Build\Lib\Opencv\x64\vc17\lib;C:\Build\Lib\ceres-solver-2.1.0\lib;C:\Build\Lib\gflags-2.2.2\lib;C:\Build\Lib\glog-0.6.0\lib;C:\Program Files\MATLAB\R2022b\extern\lib\win64\microsoft;C:\Build\Lib\VTK-9.2.6\Release\lib;C:\Build\PCL 1.13.1\lib;C:\Build\PCL 1.13.1\3rdParty\Boost\lib;C:\Build\PCL 1.13.1\3rdParty\FLANN\lib;C:\Build\PCL 1.13.1\3rdParty\Qhull\lib;C:\Program Files\OpenNI2\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Build\Lib\Opencv\include;C:\Build\Lib\Opencv\include\opencv2;C:\Build\Lib\ceres-solver-2.1.0-nocuda\include;C:\Build\Lib\eigen-3.4.0\include\eigen3;C:\Build\Lib\eigen-3.4.0\include\eigen3\Eigen;C:\Build\Lib\glog-0.6.0\include;C:\Build\Lib\gflags-2.2.2\include;C:\Program Files\MATLAB\R2022b\extern\include;C:\Build\Lib\VTK-9.2.6\Release\include\vtk-9.2;C:\Build\PCL 1.13.1\include\pcl-1.13;C:\Build\PCL 1.13.1\3rdParty\Boost\include\boost-1_82;C:\Build\PCL 1.13.1\3rdParty\FLANN\include;C:\Build\PCL 1.13.1\3rdParty\Qhull\include;C:\Program Files\OpenNI2\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Build\Lib\Opencv\x64\vc17\lib;C:\Build\Lib\ceres-solver-2.1.0-nocuda\lib;C:\Build\Lib\gflags-2.2.2\lib;C:\Build\Lib\glog-0.6.0\lib;C:\Program Files\MATLAB\R2022b\extern\lib\win64\microsoft;C:\Build\Lib\VTK-9.2.6\Release\lib;C:\Build\PCL 1.13.1\lib;C:\Build\PCL 1.13.1\3rdParty\Boost\lib;C:\Build\PCL 1.13.1\3rdParty\FLANN\lib;C:\Build\PCL 1.13.1\3rdParty\Qhull\lib;C:\Program Files\OpenNI2\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
@@ -88,7 +88,7 @@
       <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -128,6 +128,7 @@
     <ClCompile Include="Feature_Detect\Matlab2C\get_chessborad_pixel_initialize.cpp" />
     <ClCompile Include="Feature_Detect\Matlab2C\get_chessborad_pixel_rtwutil.cpp" />
     <ClCompile Include="Feature_Detect\Matlab2C\get_chessborad_pixel_terminate.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\get_fx_fy.cpp" />
     <ClCompile Include="Feature_Detect\Matlab2C\halideEvalImpl.cpp" />
     <ClCompile Include="Feature_Detect\Matlab2C\imdilate.cpp" />
     <ClCompile Include="Feature_Detect\Matlab2C\imedge_2d.cpp" />
@@ -151,6 +152,7 @@
     <ClCompile Include="Feature_Detect\Matlab2C\squeeze.cpp" />
     <ClCompile Include="Feature_Detect\Matlab2C\subPixelLocation.cpp" />
     <ClCompile Include="Feature_Detect\Matlab2C\sum.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\sumprod.cpp" />
     <ClCompile Include="Feature_Detect\Matlab2C\svd.cpp" />
     <ClCompile Include="Feature_Detect\Matlab2C\svd1.cpp" />
     <ClCompile Include="Feature_Detect\Matlab2C\unsafeSxfun.cpp" />
@@ -161,6 +163,7 @@
     <ClCompile Include="Feature_Detect\Matlab2C\xrot.cpp" />
     <ClCompile Include="Feature_Detect\Matlab2C\xrotg.cpp" />
     <ClCompile Include="Feature_Detect\Matlab2C\xswap.cpp" />
+    <ClCompile Include="Feature_Detect\Matlab2C\xzsvdc.cpp" />
     <ClCompile Include="Language\Linguist.cpp" />
     <ClCompile Include="PCL_setting_module.cpp" />
     <ClCompile Include="plot_show\qcustomplot.cpp" />
@@ -204,6 +207,7 @@
     <ClInclude Include="Feature_Detect\Matlab2C\get_chessborad_pixel_rtwutil.h" />
     <ClInclude Include="Feature_Detect\Matlab2C\get_chessborad_pixel_terminate.h" />
     <ClInclude Include="Feature_Detect\Matlab2C\get_chessborad_pixel_types.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\get_fx_fy.h" />
     <ClInclude Include="Feature_Detect\Matlab2C\halideEvalImpl.h" />
     <ClInclude Include="Feature_Detect\Matlab2C\HalideRuntime.h" />
     <ClInclude Include="Feature_Detect\Matlab2C\imdilate.h" />
@@ -244,6 +248,7 @@
     <ClInclude Include="Feature_Detect\Matlab2C\squeeze.h" />
     <ClInclude Include="Feature_Detect\Matlab2C\subPixelLocation.h" />
     <ClInclude Include="Feature_Detect\Matlab2C\sum.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\sumprod.h" />
     <ClInclude Include="Feature_Detect\Matlab2C\svd.h" />
     <ClInclude Include="Feature_Detect\Matlab2C\svd1.h" />
     <ClInclude Include="Feature_Detect\Matlab2C\tmwtypes.h" />
@@ -255,14 +260,22 @@
     <ClInclude Include="Feature_Detect\Matlab2C\xrot.h" />
     <ClInclude Include="Feature_Detect\Matlab2C\xrotg.h" />
     <ClInclude Include="Feature_Detect\Matlab2C\xswap.h" />
+    <ClInclude Include="Feature_Detect\Matlab2C\xzsvdc.h" />
     <ClInclude Include="Format_Document.h" />
     <QtMoc Include="PCL_setting_module.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="VTK_plot\VTK_plot.h" />
     <QtMoc Include="Camera_op\camshowlabel.h" />
     <QtMoc Include="plot_show\qcustomplot.h" />
     <QtMoc Include="Language\Linguist.h" />
     <ClInclude Include="SFM_optimize.h" />
     <QtMoc Include="SFM_setting_module.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SFM_module.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon\pet.ico" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Feature_Detect\Matlab2C\buildInfo.mat" />

@@ -82,6 +82,9 @@
     <ClCompile Include="Feature_Detect\imagedetectmethod.cpp">
       <Filter>Feature_detect</Filter>
     </ClCompile>
+    <ClCompile Include="PCL_setting_module.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Feature_Detect\Matlab2C\algbwmorph.cpp">
       <Filter>Feature_detect\Matlab2C</Filter>
     </ClCompile>
@@ -140,6 +143,9 @@
       <Filter>Feature_detect\Matlab2C</Filter>
     </ClCompile>
     <ClCompile Include="Feature_Detect\Matlab2C\get_chessborad_pixel_terminate.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\get_fx_fy.cpp">
       <Filter>Feature_detect\Matlab2C</Filter>
     </ClCompile>
     <ClCompile Include="Feature_Detect\Matlab2C\halideEvalImpl.cpp">
@@ -211,6 +217,9 @@
     <ClCompile Include="Feature_Detect\Matlab2C\sum.cpp">
       <Filter>Feature_detect\Matlab2C</Filter>
     </ClCompile>
+    <ClCompile Include="Feature_Detect\Matlab2C\sumprod.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClCompile>
     <ClCompile Include="Feature_Detect\Matlab2C\svd.cpp">
       <Filter>Feature_detect\Matlab2C</Filter>
     </ClCompile>
@@ -241,8 +250,8 @@
     <ClCompile Include="Feature_Detect\Matlab2C\xswap.cpp">
       <Filter>Feature_detect\Matlab2C</Filter>
     </ClCompile>
-    <ClCompile Include="PCL_setting_module.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Feature_Detect\Matlab2C\xzsvdc.cpp">
+      <Filter>Feature_detect\Matlab2C</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -280,6 +289,12 @@
     </ClInclude>
     <ClInclude Include="Feature_Detect\CodeID.h">
       <Filter>Feature_detect</Filter>
+    </ClInclude>
+    <ClInclude Include="Format_Document.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Feature_Detect\Matlab2C\algbwmorph.h">
       <Filter>Feature_detect\Matlab2C</Filter>
@@ -348,6 +363,9 @@
       <Filter>Feature_detect\Matlab2C</Filter>
     </ClInclude>
     <ClInclude Include="Feature_Detect\Matlab2C\get_chessborad_pixel_types.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\get_fx_fy.h">
       <Filter>Feature_detect\Matlab2C</Filter>
     </ClInclude>
     <ClInclude Include="Feature_Detect\Matlab2C\halideEvalImpl.h">
@@ -470,6 +488,9 @@
     <ClInclude Include="Feature_Detect\Matlab2C\sum.h">
       <Filter>Feature_detect\Matlab2C</Filter>
     </ClInclude>
+    <ClInclude Include="Feature_Detect\Matlab2C\sumprod.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
+    </ClInclude>
     <ClInclude Include="Feature_Detect\Matlab2C\svd.h">
       <Filter>Feature_detect\Matlab2C</Filter>
     </ClInclude>
@@ -503,8 +524,8 @@
     <ClInclude Include="Feature_Detect\Matlab2C\xswap.h">
       <Filter>Feature_detect\Matlab2C</Filter>
     </ClInclude>
-    <ClInclude Include="Format_Document.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="Feature_Detect\Matlab2C\xzsvdc.h">
+      <Filter>Feature_detect\Matlab2C</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -517,6 +538,16 @@
     <QtUic Include="PCL_setting_module.ui">
       <Filter>Form Files</Filter>
     </QtUic>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SFM_module.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon\pet.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="Feature_Detect\Matlab2C\_clang-format">

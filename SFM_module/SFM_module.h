@@ -81,7 +81,7 @@ private:
 	std::vector<unsigned int>  ImageWidth_serial;
 	std::vector<unsigned int>  ImageHeight_serial;
 	std::vector<std::vector<cv::Point2d>> Result_err_every;
-	std::vector<std::vector<std::vector<cv::Point>>> Result_contours_serial;
+	std::vector<std::vector<std::vector<cv::Point2f>>> Result_contours_serial;
 	std::vector<sfm_3d_group> Result_xyz_serial;
 	std::vector<bool>  xyz_need_levelling_serial;
 	std::vector<int> xyz_need_levelling_code_serial;
@@ -100,7 +100,7 @@ private:
 
 
 	std::vector<std::vector<Coded_detect_inf>> Keypoints_in_queue;
-	std::vector<std::vector<std::vector<cv::Point>>> Keypoints_contours_in_queue;
+	std::vector<std::vector<std::vector<cv::Point2f>>> Keypoints_contours_in_queue;
 	std::vector<int> Keypoints_index_in_queue;
 	std::vector<cv::Mat> Keypoints_R_in_queue;
 	std::vector<cv::Mat> Keypoints_T_in_queue;
@@ -152,9 +152,11 @@ private:
 		std::vector<Coded_detect_inf> keypoints_now, cv::Mat K, cv::Mat Dis,
 		std::vector<cv::Mat> R_in_queue, std::vector<cv::Mat> T_in_queue, cv::Mat R_now, cv::Mat T_now,
 		std::vector<sfm_3d_group>& P_world, double& update_number, int& new_number);
-	void remove_calculated_index_from_pair(std::vector<std::vector<Coded_detect_inf>>& P_serial, std::vector<std::vector<std::vector<cv::Point>>>& PC_serial, std::vector<int>& P_serial_index,
+	void remove_calculated_index_from_pair(std::vector<std::vector<Coded_detect_inf>>& P_serial, 
+		std::vector<std::vector<std::vector<cv::Point2f>>>& PC_serial, std::vector<int>& P_serial_index,
 		match_pair_group matches);
-	void remove_calculated_index_from_index(std::vector<std::vector<Coded_detect_inf>>& P_serial, std::vector<std::vector<std::vector<cv::Point>>>& PC_serial, std::vector<int>& P_serial_index,
+	void remove_calculated_index_from_index(std::vector<std::vector<Coded_detect_inf>>& P_serial, 
+		std::vector<std::vector<std::vector<cv::Point2f>>>& PC_serial, std::vector<int>& P_serial_index,
 		int match);
 
 	int cal_transform(cv::Mat& K, std::vector<cv::Point2d>& p1, std::vector<cv::Point2d>& p2, cv::Mat& R, cv::Mat& T, cv::Mat& mask, int mode);
@@ -180,7 +182,7 @@ private:
 	std::vector<double> SFM_camera_focal_vector;
 	std::vector<double> SFM_camera_pixel_vector;
 
-	ellipse_view_pose calculate_ellipse(std::vector<cv::Point> ellipse_contours, 
+	ellipse_view_pose calculate_ellipse(std::vector<cv::Point2f> ellipse_contours, 
 		cv::Mat K, cv::Mat Dis, Eigen::Quaterniond R, Eigen::Vector3d T);
 
 	double kahanSum_double(std::vector<double> nums);
@@ -240,6 +242,7 @@ public:
 		, std::vector<std::vector<cv::Point2d>> Re_project_Map
 		, double* camK, double* camDK, double* camDP, double* camDT
 		, ceres::Solver::Summary* summary
+		, ceres::Solver::Summary* summary_AG
 		, unsigned int max_iter_num = 1000
 		, double stop_value = 1e-9
 		, unsigned int num_threads = 1
@@ -256,7 +259,7 @@ public:
 		, bool Use_same_F = false
 		, double* F_range = nullptr
 		, double* C_range = nullptr
-		, bool is_part = false);
+		, double out_th = 10);
 	bool is_finish = false;
 	std::vector<sfm_3d_group> point_clouds_thread;
 	std::vector<Eigen::Quaterniond> camQvec_thread;
@@ -273,6 +276,7 @@ protected:
 private:
 	std::vector<std::vector<Coded_detect_inf>> code_circle_serial_thread;
 	ceres::Solver::Summary* summary_thread;
+	ceres::Solver::Summary* summary_thread_AG;
 	unsigned int max_iter_num_thread;
 	double stop_value_thread;
 	unsigned int num_threads_thread;
@@ -282,13 +286,13 @@ private:
 	unsigned int Dis_K_num_thread;
 	unsigned int Dis_P_num_thread;
 	unsigned int Dis_T_num_thread;
-	bool is_part_thread = false;
 	bool Use_F_thread;
 	bool Use_Cx_Cy_thread;
 	bool Use_shear_thread;
 	bool Use_same_F_thread;
 	double* F_range_thread = nullptr;
 	double* C_range_thread = nullptr;
+	double out_th_thread = 10;
 	bool Fixed_all_trhead;
 
 };
@@ -306,7 +310,7 @@ public:
 		, double max_aspect_ratio = 2, int min_points = 6, int min_contour_num = 8,
 		float delta_Mt = 50, float fore_stdDev = 100, float back_stdDev = 100);
 	cv::Mat code_point_mat;
-	std::vector<std::vector<cv::Point>> contours_pixel;
+	std::vector<std::vector<cv::Point2f>> contours_pixel;
 	bool is_finish = false;
 	bool success_cal = false;
 	cv::Mat ori_image_thread;
@@ -338,11 +342,11 @@ class calculate_circle_thread : public QThread
 {
 	Q_OBJECT
 public:
-	explicit calculate_circle_thread(std::vector<sfm_3d_group> point_cloudss, std::vector<std::vector<std::vector<cv::Point>>> contour_circle_serials,
+	explicit calculate_circle_thread(std::vector<sfm_3d_group> point_cloudss, std::vector<std::vector<std::vector<cv::Point2f>>> contour_circle_serials,
 		std::vector<std::vector<Coded_detect_inf>> code_circle_serials, std::vector<Eigen::Vector3d> ori_serials,
 		std::vector<Eigen::Quaterniond> camQvecs, std::vector<Eigen::Vector3d> camTvecs
 		, double* camKs, double* camDKs, double* camDPs, double* camDTs
-		, ceres::Solver::Summary* summarys
+		, std::vector<ceres::Solver::Summary> *summarys
 		, unsigned int max_iter_nums = 1000
 		, double stop_values = 1e-9
 		, unsigned int num_threadss = 1
@@ -358,7 +362,7 @@ protected:
 	virtual void run();
 
 private:
-	std::vector<std::vector<std::vector<cv::Point>>> contour_circle_serial;
+	std::vector<std::vector<std::vector<cv::Point2f>>> contour_circle_serial;
 	std::vector<std::vector<Coded_detect_inf>> code_circle_serial;
 	std::vector<Eigen::Quaterniond> camQvec;
 	std::vector<Eigen::Vector3d> camTvec;
@@ -366,7 +370,7 @@ private:
 	double* camDK;
 	double* camDP; 
 	double* camDT;
-	ceres::Solver::Summary* summary;
+	std::vector<ceres::Solver::Summary>* summary;
 	unsigned int max_iter_num = 1000;
 	double stop_value = 1e-9;
 	unsigned int num_threads = 1;
@@ -382,11 +386,11 @@ class update_coded_circle_pixel_thread : public QObject, public QRunnable
 public:
 	explicit update_coded_circle_pixel_thread(Eigen::Matrix<double, 3, 4> Camera_K, Eigen::Matrix<double, 3, 3> Camera_R
 		, Eigen::Vector3d Camera_T,  std::vector<Coded_detect_inf> key_points,
-		std::vector<Eigen::Vector3d> ori_vec, std::vector<sfm_3d_group> point_3d, std::vector<std::vector<cv::Point>> contour,
+		std::vector<Eigen::Vector3d> ori_vec, std::vector<sfm_3d_group> point_3d, std::vector<std::vector<cv::Point2f>> contour,
 		QString image_path, float ratio_k, float ratio_k1, float ratio_k2,
 		float min_radius, float max_radius, float ellipse_error_pixel = 0.5,
 		MarkPointColorType color_type = BlackDownWhiteUp, CodePointBitesType code_bites_type = CodeBites15,
-		DetectContoursMethod image_process_method = OTSU_Method, SubPixelPosMethod subpixel_pos_method = Gray_Centroid
+		DetectContoursMethod image_process_method = CANNY_Method, SubPixelPosMethod subpixel_pos_method = Gray_Centroid
 		, double max_aspect_ratio = 2, int min_points = 6, int min_contour_num = 8,
 		float delta_Mt = 50, float fore_stdDev = 100, float back_stdDev = 100);
 	bool is_finish = false;
@@ -403,7 +407,7 @@ private:
 	cv::Mat ori_image_thread;
 	std::vector<Eigen::Vector3d> ori_vec_thread;
 	std::vector<sfm_3d_group> point_3d_thread;
-	std::vector<std::vector<cv::Point>> contour_thread;
+	std::vector<std::vector<cv::Point2f>> contour_thread;
 	QString image_path_thread;
 	float ratio_k_thread;
 	float ratio_k1_thread;

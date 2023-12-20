@@ -7,16 +7,12 @@
 int main(int argc, char* argv[])
 {
 
-#ifdef DEBUG
-
-#else
     HWND hwnd;
     hwnd = FindWindow(L"ConsoleWindowClass", NULL);
     if (hwnd)
     {
         ShowWindow(hwnd, SW_HIDE);
     }
-#endif
 
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);

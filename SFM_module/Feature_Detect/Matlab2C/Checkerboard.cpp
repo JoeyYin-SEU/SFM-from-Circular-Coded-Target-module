@@ -5,7 +5,7 @@
 // File: Checkerboard.cpp
 //
 // MATLAB Coder version            : 5.5
-// C/C++ source code generated on  : 27-Nov-2023 10:57:33
+// C/C++ source code generated on  : 19-Dec-2023 13:39:53
 //
 
 // Include Files
@@ -19,7 +19,6 @@
 #include "find.h"
 #include "get_chessborad_pixel_rtwutil.h"
 #include "ismember.h"
-#include "mean.h"
 #include "minOrMax.h"
 #include "norm.h"
 #include "polyfit.h"
@@ -4780,15 +4779,13 @@ namespace coder
           void Checkerboard::findIndependentVar(const ::coder::array<double, 2U>
             &idx, double coordsToUse[2]) const
           {
-            array<double, 2U> r10;
-            array<double, 2U> r3;
-            array<double, 2U> r5;
-            array<double, 2U> r7;
-            array<double, 2U> r9;
+            array<double, 2U> b_x;
+            array<double, 2U> r4;
+            array<double, 2U> x;
             array<int, 2U> r2;
-            array<int, 2U> r4;
+            array<int, 2U> r3;
+            array<int, 2U> r5;
             array<int, 2U> r6;
-            array<int, 2U> r8;
             array<boolean_T, 2U> r;
             array<boolean_T, 2U> r1;
             int idx_tmp;
@@ -4845,11 +4842,11 @@ namespace coder
             }
 
             idx_tmp = static_cast<int>(idx[1]);
-            r3.set_size(1, r2.size(1));
+            x.set_size(1, r2.size(1));
             loop_ub = r2.size(1);
             if (static_cast<int>(r2.size(1) < 3200)) {
               for (int i{0}; i < loop_ub; i++) {
-                r3[i] = BoardCoords[(idx_tmp + BoardCoords.size(0) * (r2[i] - 1))
+                x[i] = BoardCoords[(idx_tmp + BoardCoords.size(0) * (r2[i] - 1))
                   - 1];
               }
             } else {
@@ -4858,7 +4855,7 @@ namespace coder
  num_threads(32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
 
               for (int i = 0; i < loop_ub; i++) {
-                r3[i] = BoardCoords[(idx_tmp + BoardCoords.size(0) * (r2[i] - 1))
+                x[i] = BoardCoords[(idx_tmp + BoardCoords.size(0) * (r2[i] - 1))
                   - 1];
               }
             }
@@ -4871,21 +4868,21 @@ namespace coder
               }
             }
 
-            r4.set_size(1, idx_tmp);
+            r3.set_size(1, idx_tmp);
             idx_tmp = 0;
             for (int b_i{0}; b_i <= loop_ub; b_i++) {
               if (r[b_i] && r1[b_i]) {
-                r4[idx_tmp] = b_i + 1;
+                r3[idx_tmp] = b_i + 1;
                 idx_tmp++;
               }
             }
 
             idx_tmp = static_cast<int>(idx[0]);
-            r5.set_size(1, r4.size(1));
-            loop_ub = r4.size(1);
-            if (static_cast<int>(r4.size(1) < 3200)) {
+            r4.set_size(1, r3.size(1));
+            loop_ub = r3.size(1);
+            if (static_cast<int>(r3.size(1) < 3200)) {
               for (int i{0}; i < loop_ub; i++) {
-                r5[i] = BoardCoords[(idx_tmp + BoardCoords.size(0) * (r4[i] - 1))
+                r4[i] = BoardCoords[(idx_tmp + BoardCoords.size(0) * (r3[i] - 1))
                   - 1];
               }
             } else {
@@ -4894,8 +4891,61 @@ namespace coder
  num_threads(32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
 
               for (int i = 0; i < loop_ub; i++) {
-                r5[i] = BoardCoords[(idx_tmp + BoardCoords.size(0) * (r4[i] - 1))
+                r4[i] = BoardCoords[(idx_tmp + BoardCoords.size(0) * (r3[i] - 1))
                   - 1];
+              }
+            }
+
+            x.set_size(1, x.size(1));
+            idx_tmp = x.size(1) - 1;
+            loop_ub = x.size(1) - 1;
+            if (static_cast<int>(x.size(1) < 3200)) {
+              for (int i{0}; i <= idx_tmp; i++) {
+                x[i] = x[i] - r4[i];
+              }
+            } else {
+
+#pragma omp parallel for \
+ num_threads(32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+              for (int i = 0; i <= loop_ub; i++) {
+                x[i] = x[i] - r4[i];
+              }
+            }
+
+            loop_ub = r.size(1) - 1;
+            idx_tmp = 0;
+            for (int b_i{0}; b_i <= loop_ub; b_i++) {
+              if (r[b_i] && r1[b_i]) {
+                idx_tmp++;
+              }
+            }
+
+            r5.set_size(1, idx_tmp);
+            idx_tmp = 0;
+            for (int b_i{0}; b_i <= loop_ub; b_i++) {
+              if (r[b_i] && r1[b_i]) {
+                r5[idx_tmp] = b_i + 1;
+                idx_tmp++;
+              }
+            }
+
+            idx_tmp = static_cast<int>(idx[1]);
+            b_x.set_size(1, r5.size(1));
+            loop_ub = r5.size(1);
+            if (static_cast<int>(r5.size(1) < 3200)) {
+              for (int i{0}; i < loop_ub; i++) {
+                b_x[i] = BoardCoords[((idx_tmp + BoardCoords.size(0) * (r5[i] -
+                  1)) + BoardCoords.size(0) * BoardCoords.size(1)) - 1];
+              }
+            } else {
+
+#pragma omp parallel for \
+ num_threads(32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+              for (int i = 0; i < loop_ub; i++) {
+                b_x[i] = BoardCoords[((idx_tmp + BoardCoords.size(0) * (r5[i] -
+                  1)) + BoardCoords.size(0) * BoardCoords.size(1)) - 1];
               }
             }
 
@@ -4916,12 +4966,12 @@ namespace coder
               }
             }
 
-            idx_tmp = static_cast<int>(idx[1]);
-            r7.set_size(1, r6.size(1));
+            idx_tmp = static_cast<int>(idx[0]);
+            r4.set_size(1, r6.size(1));
             loop_ub = r6.size(1);
             if (static_cast<int>(r6.size(1) < 3200)) {
               for (int i{0}; i < loop_ub; i++) {
-                r7[i] = BoardCoords[((idx_tmp + BoardCoords.size(0) * (r6[i] - 1))
+                r4[i] = BoardCoords[((idx_tmp + BoardCoords.size(0) * (r6[i] - 1))
                                      + BoardCoords.size(0) * BoardCoords.size(1))
                   - 1];
               }
@@ -4931,83 +4981,32 @@ namespace coder
  num_threads(32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
 
               for (int i = 0; i < loop_ub; i++) {
-                r7[i] = BoardCoords[((idx_tmp + BoardCoords.size(0) * (r6[i] - 1))
+                r4[i] = BoardCoords[((idx_tmp + BoardCoords.size(0) * (r6[i] - 1))
                                      + BoardCoords.size(0) * BoardCoords.size(1))
                   - 1];
               }
             }
 
-            loop_ub = r.size(1) - 1;
-            idx_tmp = 0;
-            for (int b_i{0}; b_i <= loop_ub; b_i++) {
-              if (r[b_i] && r1[b_i]) {
-                idx_tmp++;
-              }
-            }
-
-            r8.set_size(1, idx_tmp);
-            idx_tmp = 0;
-            for (int b_i{0}; b_i <= loop_ub; b_i++) {
-              if (r[b_i] && r1[b_i]) {
-                r8[idx_tmp] = b_i + 1;
-                idx_tmp++;
-              }
-            }
-
-            idx_tmp = static_cast<int>(idx[0]);
-            r9.set_size(1, r8.size(1));
-            loop_ub = r8.size(1);
-            if (static_cast<int>(r8.size(1) < 3200)) {
-              for (int i{0}; i < loop_ub; i++) {
-                r9[i] = BoardCoords[((idx_tmp + BoardCoords.size(0) * (r8[i] - 1))
-                                     + BoardCoords.size(0) * BoardCoords.size(1))
-                  - 1];
+            b_x.set_size(1, b_x.size(1));
+            idx_tmp = b_x.size(1) - 1;
+            loop_ub = b_x.size(1) - 1;
+            if (static_cast<int>(b_x.size(1) < 3200)) {
+              for (int i{0}; i <= idx_tmp; i++) {
+                b_x[i] = b_x[i] - r4[i];
               }
             } else {
 
 #pragma omp parallel for \
  num_threads(32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
 
-              for (int i = 0; i < loop_ub; i++) {
-                r9[i] = BoardCoords[((idx_tmp + BoardCoords.size(0) * (r8[i] - 1))
-                                     + BoardCoords.size(0) * BoardCoords.size(1))
-                  - 1];
+              for (int i = 0; i <= loop_ub; i++) {
+                b_x[i] = b_x[i] - r4[i];
               }
             }
 
-            r10.set_size(1, r3.size(1));
-            loop_ub = r3.size(1);
-            if (static_cast<int>(r3.size(1) < 3200)) {
-              for (int i{0}; i < loop_ub; i++) {
-                r10[i] = r3[i] - r5[i];
-              }
-            } else {
-
-#pragma omp parallel for \
- num_threads(32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
-
-              for (int i = 0; i < loop_ub; i++) {
-                r10[i] = r3[i] - r5[i];
-              }
-            }
-
-            r3.set_size(1, r7.size(1));
-            loop_ub = r7.size(1);
-            if (static_cast<int>(r7.size(1) < 3200)) {
-              for (int i{0}; i < loop_ub; i++) {
-                r3[i] = r7[i] - r9[i];
-              }
-            } else {
-
-#pragma omp parallel for \
- num_threads(32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
-
-              for (int i = 0; i < loop_ub; i++) {
-                r3[i] = r7[i] - r9[i];
-              }
-            }
-
-            if (std::abs(mean(r10)) > std::abs(mean(r3))) {
+            if (std::abs(combineVectorElements(x) / static_cast<double>(x.size(1)))
+                > std::abs(combineVectorElements(b_x) / static_cast<double>
+                           (b_x.size(1)))) {
               coordsToUse[0] = 1.0;
               coordsToUse[1] = 2.0;
             } else {
@@ -5022,15 +5021,13 @@ namespace coder
           //
           void Checkerboard::findIndependentVar(double coordsToUse[2]) const
           {
-            array<double, 2U> r10;
-            array<double, 2U> r3;
-            array<double, 2U> r5;
-            array<double, 2U> r7;
-            array<double, 2U> r9;
+            array<double, 2U> b_x;
+            array<double, 2U> r4;
+            array<double, 2U> x;
             array<int, 2U> r2;
-            array<int, 2U> r4;
+            array<int, 2U> r3;
+            array<int, 2U> r5;
             array<int, 2U> r6;
-            array<int, 2U> r8;
             array<boolean_T, 2U> r;
             array<boolean_T, 2U> r1;
             int end;
@@ -5084,11 +5081,11 @@ namespace coder
               }
             }
 
-            r3.set_size(1, r2.size(1));
+            x.set_size(1, r2.size(1));
             loop_ub = r2.size(1);
             if (static_cast<int>(r2.size(1) < 3200)) {
               for (int i{0}; i < loop_ub; i++) {
-                r3[i] = BoardCoords[BoardCoords.size(0) * (r2[i] - 1) + 1];
+                x[i] = BoardCoords[BoardCoords.size(0) * (r2[i] - 1) + 1];
               }
             } else {
 
@@ -5096,7 +5093,7 @@ namespace coder
  num_threads(32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
 
               for (int i = 0; i < loop_ub; i++) {
-                r3[i] = BoardCoords[BoardCoords.size(0) * (r2[i] - 1) + 1];
+                x[i] = BoardCoords[BoardCoords.size(0) * (r2[i] - 1) + 1];
               }
             }
 
@@ -5108,20 +5105,20 @@ namespace coder
               }
             }
 
-            r4.set_size(1, loop_ub);
+            r3.set_size(1, loop_ub);
             loop_ub = 0;
             for (int b_i{0}; b_i <= end; b_i++) {
               if (r[b_i] && r1[b_i]) {
-                r4[loop_ub] = b_i + 1;
+                r3[loop_ub] = b_i + 1;
                 loop_ub++;
               }
             }
 
-            r5.set_size(1, r4.size(1));
-            loop_ub = r4.size(1);
-            if (static_cast<int>(r4.size(1) < 3200)) {
+            r4.set_size(1, r3.size(1));
+            loop_ub = r3.size(1);
+            if (static_cast<int>(r3.size(1) < 3200)) {
               for (int i{0}; i < loop_ub; i++) {
-                r5[i] = BoardCoords[BoardCoords.size(0) * (r4[i] - 1)];
+                r4[i] = BoardCoords[BoardCoords.size(0) * (r3[i] - 1)];
               }
             } else {
 
@@ -5129,7 +5126,61 @@ namespace coder
  num_threads(32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
 
               for (int i = 0; i < loop_ub; i++) {
-                r5[i] = BoardCoords[BoardCoords.size(0) * (r4[i] - 1)];
+                r4[i] = BoardCoords[BoardCoords.size(0) * (r3[i] - 1)];
+              }
+            }
+
+            x.set_size(1, x.size(1));
+            end = x.size(1) - 1;
+            loop_ub = x.size(1) - 1;
+            if (static_cast<int>(x.size(1) < 3200)) {
+              for (int i{0}; i <= end; i++) {
+                x[i] = x[i] - r4[i];
+              }
+            } else {
+
+#pragma omp parallel for \
+ num_threads(32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+              for (int i = 0; i <= loop_ub; i++) {
+                x[i] = x[i] - r4[i];
+              }
+            }
+
+            end = r.size(1) - 1;
+            loop_ub = 0;
+            for (int b_i{0}; b_i <= end; b_i++) {
+              if (r[b_i] && r1[b_i]) {
+                loop_ub++;
+              }
+            }
+
+            r5.set_size(1, loop_ub);
+            loop_ub = 0;
+            for (int b_i{0}; b_i <= end; b_i++) {
+              if (r[b_i] && r1[b_i]) {
+                r5[loop_ub] = b_i + 1;
+                loop_ub++;
+              }
+            }
+
+            b_x.set_size(1, r5.size(1));
+            loop_ub = r5.size(1);
+            if (static_cast<int>(r5.size(1) < 3200)) {
+              for (int i{0}; i < loop_ub; i++) {
+                b_x[i] = BoardCoords[(BoardCoords.size(0) * (r5[i] - 1) +
+                                      BoardCoords.size(0) * BoardCoords.size(1))
+                  + 1];
+              }
+            } else {
+
+#pragma omp parallel for \
+ num_threads(32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
+
+              for (int i = 0; i < loop_ub; i++) {
+                b_x[i] = BoardCoords[(BoardCoords.size(0) * (r5[i] - 1) +
+                                      BoardCoords.size(0) * BoardCoords.size(1))
+                  + 1];
               }
             }
 
@@ -5150,48 +5201,11 @@ namespace coder
               }
             }
 
-            r7.set_size(1, r6.size(1));
+            r4.set_size(1, r6.size(1));
             loop_ub = r6.size(1);
             if (static_cast<int>(r6.size(1) < 3200)) {
               for (int i{0}; i < loop_ub; i++) {
-                r7[i] = BoardCoords[(BoardCoords.size(0) * (r6[i] - 1) +
-                                     BoardCoords.size(0) * BoardCoords.size(1))
-                  + 1];
-              }
-            } else {
-
-#pragma omp parallel for \
- num_threads(32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
-
-              for (int i = 0; i < loop_ub; i++) {
-                r7[i] = BoardCoords[(BoardCoords.size(0) * (r6[i] - 1) +
-                                     BoardCoords.size(0) * BoardCoords.size(1))
-                  + 1];
-              }
-            }
-
-            end = r.size(1) - 1;
-            loop_ub = 0;
-            for (int b_i{0}; b_i <= end; b_i++) {
-              if (r[b_i] && r1[b_i]) {
-                loop_ub++;
-              }
-            }
-
-            r8.set_size(1, loop_ub);
-            loop_ub = 0;
-            for (int b_i{0}; b_i <= end; b_i++) {
-              if (r[b_i] && r1[b_i]) {
-                r8[loop_ub] = b_i + 1;
-                loop_ub++;
-              }
-            }
-
-            r9.set_size(1, r8.size(1));
-            loop_ub = r8.size(1);
-            if (static_cast<int>(r8.size(1) < 3200)) {
-              for (int i{0}; i < loop_ub; i++) {
-                r9[i] = BoardCoords[BoardCoords.size(0) * (r8[i] - 1) +
+                r4[i] = BoardCoords[BoardCoords.size(0) * (r6[i] - 1) +
                   BoardCoords.size(0) * BoardCoords.size(1)];
               }
             } else {
@@ -5200,44 +5214,31 @@ namespace coder
  num_threads(32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
 
               for (int i = 0; i < loop_ub; i++) {
-                r9[i] = BoardCoords[BoardCoords.size(0) * (r8[i] - 1) +
+                r4[i] = BoardCoords[BoardCoords.size(0) * (r6[i] - 1) +
                   BoardCoords.size(0) * BoardCoords.size(1)];
               }
             }
 
-            r10.set_size(1, r3.size(1));
-            loop_ub = r3.size(1);
-            if (static_cast<int>(r3.size(1) < 3200)) {
-              for (int i{0}; i < loop_ub; i++) {
-                r10[i] = r3[i] - r5[i];
+            b_x.set_size(1, b_x.size(1));
+            end = b_x.size(1) - 1;
+            loop_ub = b_x.size(1) - 1;
+            if (static_cast<int>(b_x.size(1) < 3200)) {
+              for (int i{0}; i <= end; i++) {
+                b_x[i] = b_x[i] - r4[i];
               }
             } else {
 
 #pragma omp parallel for \
  num_threads(32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
 
-              for (int i = 0; i < loop_ub; i++) {
-                r10[i] = r3[i] - r5[i];
+              for (int i = 0; i <= loop_ub; i++) {
+                b_x[i] = b_x[i] - r4[i];
               }
             }
 
-            r3.set_size(1, r7.size(1));
-            loop_ub = r7.size(1);
-            if (static_cast<int>(r7.size(1) < 3200)) {
-              for (int i{0}; i < loop_ub; i++) {
-                r3[i] = r7[i] - r9[i];
-              }
-            } else {
-
-#pragma omp parallel for \
- num_threads(32 > omp_get_max_threads() ? omp_get_max_threads() : 32)
-
-              for (int i = 0; i < loop_ub; i++) {
-                r3[i] = r7[i] - r9[i];
-              }
-            }
-
-            if (std::abs(mean(r10)) > std::abs(mean(r3))) {
+            if (std::abs(combineVectorElements(x) / static_cast<double>(x.size(1)))
+                > std::abs(combineVectorElements(b_x) / static_cast<double>
+                           (b_x.size(1)))) {
               coordsToUse[0] = 1.0;
               coordsToUse[1] = 2.0;
             } else {
